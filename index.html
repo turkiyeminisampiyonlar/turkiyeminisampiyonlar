@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TMŞ - Türkiye Mini Şampiyonlar Turnuvası</title>
+    <link rel="stylesheet" href="style.css">
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <img src="tmş.png" alt="TMŞ Logo" id="logo">
+            <h1>Türkiye Mini Şampiyonlar (TMŞ)</h1>
+        </header>
+
+        <section class="info-section">
+            <h2>Turnuva Hakkında</h2>
+            <ul>
+                [span_1](start_span)<li>TMŞ, Türkiye'deki henüz keşfedilmemiş yetenekli oyuncuları bir araya getiren yeni bir turnuva oluşumudur[span_1](end_span).</li>
+                [span_2](start_span)<li>Bu organizasyon ile Türkiye genelinde Mini Şampiyonlar Turnuvası düzenlenmektedir[span_2](end_span).</li>
+                [span_3](start_span)<li>Her takım 3 oyuncudan oluşur[span_3](end_span).</li>
+                [span_4](start_span)<li>Her oyuncunun en az bir sosyal medya platformunda en az 30 takipçisi olması zorunludur[span_4](end_span).</li>
+                [span_5](start_span)<li>Takım adı, doğrudan bir oyuncunun kullanıcı adı olamaz[span_5](end_span).</li>
+                [span_6](start_span)<li>Her oyuncunun Minecraft Java versiyonuna sahip olması gerekir (Crack/orijinal olmayan sürümlerle katılım mümkündür)[span_6](end_span).</li>
+                [span_7](start_span)<li>Bağlantı sorunlarında takım maça duraklatma olmaksızın kalan oyuncu sayısı ile devam eder[span_7](end_span).</li>
+                [span_8](start_span)<li>Hile kullanmak kesinlikle yasaktır ve sunucu otomatik taranacaktır[span_8](end_span).</li>
+                [span_9](start_span)<li>Hile tespit edilenlere para cezası da dahil yaptırımlar uygulanacaktır[span_9](end_span).</li>
+                [span_10](start_span)<li>Şampiyon olan takımın her bir oyuncusuna 200 TL değerinde oyun/hediye kodları verilecektir[span_10](end_span).</li>
+            </ul>
+        </section>
+
+        <section class="form-section">
+            <h2>Hemen Katıl!</h2>
+            <form id="registrationForm">
+                <label>Takım İsmi (Kullanıcı adınızla aynı olamaz):</label>
+                <input type="text" id="teamName" required>
+
+                <label>Takım Logosu Yükle:</label>
+                <input type="file" id="teamLogo" accept="image/*" required>
+
+                <div class="player-inputs">
+                    <h3>Oyuncu 1 (Kaptan)</h3>
+                    <input type="text" id="p1Name" placeholder="Oyun İçi Adı" required>
+                    <input type="email" id="p1Email" placeholder="E-Posta Adresi" required>
+                    <input type="text" id="p1YT" placeholder="YouTube/Sosyal Medya Linki" required>
+                </div>
+
+                <div class="player-inputs">
+                    <h3>Oyuncu 2</h3>
+                    <input type="text" id="p2Name" placeholder="Oyun İçi Adı" required>
+                    <input type="email" id="p2Email" placeholder="E-Posta Adresi" required>
+                    <input type="text" id="p2YT" placeholder="YouTube/Sosyal Medya Linki" required>
+                </div>
+
+                <div class="player-inputs">
+                    <h3>Oyuncu 3</h3>
+                    <input type="text" id="p3Name" placeholder="Oyun İçi Adı" required>
+                    <input type="email" id="p3Email" placeholder="E-Posta Adresi" required>
+                    <input type="text" id="p3YT" placeholder="YouTube/Sosyal Medya Linki" required>
+                </div>
+
+                <button type="submit" id="submitBtn">Başvuruyu Gönder</button>
+            </form>
+            <p id="statusMessage"></p>
+        </section>
+    </div>
+
+    <script type="module" src="main.js"></script>
+</body>
+</html>
