@@ -1,544 +1,132 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TMŞ | Türkiye Mini Şampiyonlar</title>
-
-<link rel="stylesheet" href="style.css">
-
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-
-<link rel="stylesheet"
-href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.1/css/all.min.css">
-
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TMŞ - Türkiye Mini Şampiyonlar</title>
+    <link rel="stylesheet" href="style.css">
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 </head>
-
 <body>
 
-<div class="background-blur"></div>
-
-<header class="navbar">
-
-<div class="container">
-
-<a class="logo" href="#">
-
-<img src="tmş.png" alt="TMŞ">
-
-<span>TMŞ</span>
-
-</a>
-
-<nav>
-
-<a href="#home">Ana Sayfa</a>
-
-<a href="#about">Turnuva</a>
-
-<a href="#rules">Kurallar</a>
-
-<a href="#register">Başvuru</a>
-
-<a href="admin.html">Admin</a>
-
-</nav>
-
-<a href="#register" class="btn-primary">
-
-Hemen Başvur
-
-</a>
-
-<div class="menu-btn">
-
-<i class="fa-solid fa-bars"></i>
-
-</div>
-
-</div>
-
-</header>
-
-<section class="hero" id="home">
-
-<div class="container hero-grid">
-
-<div class="hero-left">
-
-<span class="badge">
-
-🏆 8 Takımlık Büyük Turnuva
-
-</span>
-
-<h1>
-
-Türkiye Mini Şampiyonlar
-
-</h1>
-
-<p>
-
-Minecraft PvP oyuncularını bir araya getiren profesyonel 3v3 turnuvası.
-
-Sadece 8 takım seçilecek.
-
-</p>
-
-<div class="hero-buttons">
-
-<a href="#register" class="btn-primary">
-
-Başvur
-
-</a>
-
-<a href="#rules" class="btn-secondary">
-
-Kuralları Oku
-
-</a>
-
-</div>
-
-</div>
-
-<div class="hero-right">
-
-<div class="hero-card">
-
-<h3>
-
-Turnuva Bilgileri
-
-</h3>
-
-<div class="info">
-
-<span>
-
-Takım
-
-</span>
-
-<strong>
-
-8
-
-</strong>
-
-</div>
-
-<div class="info">
-
-<span>
-
-Oyuncu
-
-</span>
-
-<strong>
-
-24
-
-</strong>
-
-</div>
-
-<div class="info">
-
-<span>
-
-Format
-
-</span>
-
-<strong>
-
-3v3
-
-</strong>
-
-</div>
-
-<div class="info">
-
-<span>
-
-Maç
-
-</span>
-
-<strong>
-
-7
-
-</strong>
-
-</div>
-
-</div>
-
-</div>
-
-</div>
-
-</section>
-
-<section class="stats">
-
-<div class="container">
-
-<div class="stat-card">
-
-<h2>8</h2>
-
-<p>Takım</p>
-
-</div>
-
-<div class="stat-card">
-
-<h2>24</h2>
-
-<p>Oyuncu</p>
-
-</div>
-
-<div class="stat-card">
-
-<h2>7</h2>
-
-<p>Maç</p>
-
-</div>
-
-<div class="stat-card">
-
-<h2>600 TL</h2>
-
-<p>Ödül</p>
-
-</div>
-
-</div>
-
-</section>
-
-<section class="features" id="about">
-
-<div class="container">
-
-<h2>
-
-Neden TMŞ?
-
-</h2>
-
-<div class="feature-grid">
-
-<div class="feature">
-
-<i class="fa-solid fa-shield-halved"></i>
-
-<h3>Adil Sistem</h3>
-
-<p>
-
-Her takım eşit şartlarda mücadele eder.
-
-</p>
-
-</div>
-
-<div class="feature">
-
-<i class="fa-solid fa-gamepad"></i>
-
-<h3>Profesyonel Organizasyon</h3>
-
-<p>
-
-Discord destekli turnuva sistemi.
-
-</p>
-
-</div>
-
-<div class="feature">
-
-<i class="fa-solid fa-trophy"></i>
-
-<h3>Ödüller</h3>
-
-<p>
-
-Kazanan takım ödüller kazanır.
-
-</p>
-
-</div>
-
-<div class="feature">
-
-<i class="fa-solid fa-users"></i>
-
-<h3>Topluluk</h3>
-
-<p>
-
-Türkiye'nin en iyi PvP oyuncularıyla mücadele et.
-
-</p>
-
-</div>
-
-</div>
-
-</div>
-
-</section>
-<section class="rules" id="rules">
-
-<div class="container">
-
-<div class="section-title">
-
-<span>Kurallar</span>
-
-<h2>Turnuva Kuralları</h2>
-
-<p>
-Lütfen başvuru yapmadan önce aşağıdaki kuralları dikkatlice okuyunuz.
-</p>
-
-</div>
-
-<div class="rules-grid">
-
-<div class="rule-card">
-<i class="fa-solid fa-users"></i>
-<h3>Takım</h3>
-<p>
-Her takım 3 oyuncudan oluşmalıdır.
-</p>
-</div>
-
-<div class="rule-card">
-<i class="fa-solid fa-medal"></i>
-<h3>Katılım</h3>
-<p>
-Turnuvaya yalnızca 8 takım kabul edilir.
-</p>
-</div>
-
-<div class="rule-card">
-<i class="fa-solid fa-ban"></i>
-<h3>Hile</h3>
-<p>
-Her türlü hile yasaktır. Tespit edilen takım diskalifiye edilir.
-</p>
-</div>
-
-<div class="rule-card">
-<i class="fa-solid fa-calendar"></i>
-<h3>Maçlar</h3>
-<p>
-Çeyrek Final → Yarı Final → Final sistemi uygulanacaktır.
-</p>
-</div>
-
-</div>
-
-</div>
-
-</section>
-
-<section class="register" id="register">
-
-<div class="container">
-
-<div class="section-title">
-
-<span>Başvuru</span>
-
-<h2>Takımını Kaydet</h2>
-
-<p>
-Sadece 8 takım seçilecektir.
-</p>
-
-</div>
-
-<form id="registrationForm">
-
-<div class="team-box">
-
-<h3>Takım Bilgileri</h3>
-
-<input
-type="text"
-id="teamName"
-placeholder="Takım Adı"
-required>
-
-<div class="upload-box">
-
-<input
-type="file"
-id="teamLogo"
-accept="image/*"
-required>
-
-<p>
-
-Logo Seç veya Buraya Sürükle
-
-</p>
-
-</div>
-
-</div>
-
-<div class="players">
-
-<div class="player-card">
-
-<h3>Kaptan</h3>
-
-<input
-type="text"
-id="p1Name"
-placeholder="Oyuncu Adı"
-required>
-
-<input
-type="email"
-id="p1Email"
-placeholder="E-Posta"
-required>
-
-<input
-type="url"
-id="p1YT"
-placeholder="YouTube / Sosyal Medya"
-required>
-
-</div>
-
-<div class="player-card">
-
-<h3>Oyuncu 2</h3>
-
-<input
-type="text"
-id="p2Name"
-placeholder="Oyuncu Adı"
-required>
-
-<input
-type="email"
-id="p2Email"
-placeholder="E-Posta"
-required>
-
-<input
-type="url"
-id="p2YT"
-placeholder="YouTube / Sosyal Medya"
-required>
-
-</div>
-
-<div class="player-card">
-
-<h3>Oyuncu 3</h3>
-
-<input
-type="text"
-id="p3Name"
-placeholder="Oyuncu Adı"
-required>
-
-<input
-type="email"
-id="p3Email"
-placeholder="E-Posta"
-required>
-
-<input
-type="url"
-id="p3YT"
-placeholder="YouTube / Sosyal Medya"
-required>
-
-</div>
-
-</div>
-
-<button
-type="submit"
-id="submitBtn"
-class="btn-submit">
-
-Başvuruyu Gönder
-
-</button>
-
-</form>
-
-</div>
-
-</section>
-
-<footer>
-
-<div class="container">
-
-<div class="footer-content">
-
-<img src="tmş.png" alt="TMŞ">
-
-<h3>Türkiye Mini Şampiyonlar</h3>
-
-<p>
-
-Türkiye'nin yeni nesil Minecraft PvP turnuvası.
-
-</p>
-
-<div class="footer-links">
-
-<a href="#home">Ana Sayfa</a>
-
-<a href="#rules">Kurallar</a>
-
-<a href="#register">Başvuru</a>
-
-<a href="admin.html">Admin</a>
-
-</div>
-
-<p class="copyright">
-
-© 2026 TMŞ. Tüm Hakları Saklıdır.
-
-</p>
-
-</div>
-
-</div>
-
-</footer>
-
-<div id="toast"></div>
-
-<script type="module" src="main.js"></script>
-
+    <nav class="top-navbar">
+        <div class="nav-logo">
+            <img src="tmş.png" alt="TMŞ Logo" class="nav-logo-img">
+            <span>TMŞ <span class="accent-text">PRO</span></span>
+        </div>
+        <ul class="nav-links">
+            <li><a href="#">Ana Sayfa</a></li>
+            <li><a href="#register-section">Kayıt Ol</a></li>
+            <li><a href="#" id="openRulesBtnNav">📜 Turnuva Kuralları</a></li>
+            <li><a href="admin.html" class="nav-admin-btn" target="_blank">Yönetim Paneli</a></li>
+        </ul>
+    </nav>
+
+    <div class="glass-window">
+        <div class="window-titlebar">
+            <div class="window-dots">
+                <span class="dot dot-close"></span>
+                <span class="dot dot-minimize"></span>
+                <span class="dot dot-maximize"></span>
+            </div>
+            <div class="window-title">tms_championship_launcher.exe</div>
+            <div class="window-status"><span class="status-indicator"></span> Sunucu: Aktif</div>
+        </div>
+
+        <div class="window-content">
+            <header>
+                <div class="logo-area">
+                    <img src="tmş.png" alt="TMŞ Logo" id="logo">
+                </div>
+                <h1>Türkiye Mini Şampiyonlar</h1>
+                [span_0](start_span)<p class="subtitle">Henüz keşfedilmemiş yeteneklerin düello meydanı[span_0](end_span)!</p>
+                
+                <div class="hero-actions">
+                    <button id="openRulesBtn" class="btn-secondary">📜 Turnuva Kuralları</button>
+                    <a href="#register-section" class="btn-primary">⚔️ Hemen Başvur</a>
+                </div>
+            </header>
+
+            <section id="register-section" class="form-section">
+                <h2>Kayıt Formu</h2>
+                <form id="registrationForm">
+                    <div class="input-group">
+                        <label>Takım İsmi</label>
+                        [span_1](start_span)<input type="text" id="teamName" placeholder="Örn: NVO (Oyuncu adı olamaz)[span_1](end_span)" required>
+                    </div>
+
+                    <div class="input-group">
+                        <label>Takım Logosu</label>
+                        <input type="file" id="teamLogo" accept="image/*" required>
+                    </div>
+
+                    <div class="squad-grid">
+                        <div class="player-card">
+                            <h3>Oyuncu 1 (Kaptan)</h3>
+                            <input type="text" id="p1Name" placeholder="Oyun İçi Adı (IGN)" required>
+                            <input type="email" id="p1Email" placeholder="E-Posta Adresi" required>
+                            <input type="text" id="p1YT" placeholder="YouTube / Sosyal Medya" required>
+                        </div>
+
+                        <div class="player-card">
+                            <h3>Oyuncu 2</h3>
+                            <input type="text" id="p2Name" placeholder="Oyun İçi Adı (IGN)" required>
+                            <input type="email" id="p2Email" placeholder="E-Posta Adresi" required>
+                            <input type="text" id="p2YT" placeholder="YouTube / Sosyal Medya" required>
+                        </div>
+
+                        <div class="player-card">
+                            <h3>Oyuncu 3</h3>
+                            <input type="text" id="p3Name" placeholder="Oyun İçi Adı (IGN)" required>
+                            <input type="email" id="p3Email" placeholder="E-Posta Adresi" required>
+                            <input type="text" id="p3YT" placeholder="YouTube / Sosyal Medya" required>
+                        </div>
+                    </div>
+
+                    <button type="submit" id="submitBtn" class="btn-submit">Savaşa Katıl</button>
+                </form>
+            </section>
+        </div>
+    </div>
+
+    <div id="rulesModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" id="closeRules">&times;</span>
+            [span_2](start_span)<h2>📜 Turnuva Detayları ve Kuralları[span_2](end_span)</h2>
+            <div class="rules-scrollable">
+                [span_3](start_span)<p><strong>TMŞ Nedir?</strong> Türkiye'deki henüz keşfedilmemiş yetenekli oyuncuları bir araya getiren yeni bir turnuva oluşumudur[span_3](end_span).</p>
+                [span_4](start_span)<p><strong>Turnuva Tarihleri:</strong> Turnuva, 31 Ekim - 1 Kasım 2026 ile 7 - 8 Kasım 2026 tarihleri arasında (hafta sonları) gerçekleştirilecektir[span_4](end_span).</p>
+                
+                <h3>1. [span_5](start_span)Katılım ve Takım Şartları[span_5](end_span)</h3>
+                <ul>
+                    [span_6](start_span)<li><strong>Takım Kadrosu:</strong> Her takım 3 oyuncudan oluşur[span_6](end_span).</li>
+                    [span_7](start_span)<li><strong>Sosyal Medya Şartı:</strong> Turnuvaya katılacak her oyuncunun en az bir sosyal medya platformunda en az 30 takipçisi olması zorunludur[span_7](end_span).</li>
+                    [span_8](start_span)<li><strong>Takım İsmi:</strong> Takım adı, doğrudan bir oyuncunun kullanıcı adı olamaz (Doğru: NVO ✓ | Yanlış: NECRONVO ❌)[span_8](end_span).</li>
+                    [span_9](start_span)<li><strong>Oyun Sürümü:</strong> Her oyuncunun Minecraft Java versiyonuna sahip olması gerekir (Crack sürümlerle katılım mümkündür)[span_9](end_span).</li>
+                </ul>
+
+                <h3>2. [span_10](start_span)Maç Esnası ve Güvenlik[span_10](end_span)</h3>
+                <ul>
+                    [span_11](start_span)<li><strong>Bağlantı Sorunları:</strong> Oyundan düşme durumunda, takım maça duraklatma olmaksızın kalan oyuncu sayısı ile devam eder[span_11](end_span).</li>
+                    <li><strong>Hile Yasağı:</strong> PvP sırasında hile (cheat) kullanmak kesinlikle yasaktır. [span_12](start_span)Sunucu her saniye otomatik taranacaktır[span_12](end_span).</li>
+                    [span_13](start_span)<li><strong>Ceza Protokolü:</strong> Hile kullanan oyunculara para cezası da dahil yaptırımlar uygulanacaktır[span_13](end_span).</li>
+                </ul>
+
+                <h3>3. [span_14](start_span)Turnuva Ödülü[span_14](end_span)</h3>
+                [span_15](start_span)<p>🏆 Şampiyon olan takımın her bir oyuncusuna <strong>200 TL değerinde oyun/hediye kodları</strong> verilecektir[span_15](end_span).</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="statusModal" class="modal">
+        <div class="modal-content text-center">
+            <div id="statusIcon"></div>
+            <h2 id="statusTitle">İşlem Durumu</h2>
+            <p id="statusMessage"></p>
+            <button id="closeStatusBtn" class="btn-secondary" style="margin-top:15px; width:auto; padding:10px 30px;">Kapat</button>
+        </div>
+    </div>
+
+    <script type="module" src="main.js"></script>
 </body>
-
 </html>
