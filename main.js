@@ -20,7 +20,9 @@ const IMGBB_API_KEY = "43c8e0a8c3277336886330d1172f988a";
 const rulesModal = document.getElementById("rulesModal");
 const statusModal = document.getElementById("statusModal");
 
+// Kurallar butonu tetikleyicisi (Sadece ana ekrandaki aktif)
 document.getElementById("openRulesBtn").addEventListener("click", () => rulesModal.style.display = "flex");
+
 document.getElementById("closeRules").addEventListener("click", () => rulesModal.style.display = "none");
 document.getElementById("closeStatusBtn").addEventListener("click", () => statusModal.style.display = "none");
 
@@ -55,7 +57,6 @@ document.getElementById('registrationForm').addEventListener('submit', async (e)
     const logoFile = document.getElementById('teamLogo').files[0];
 
     try {
-        // ImgBB API ile Fotoğrafı Yükle
         const formData = new FormData();
         formData.append('image', logoFile);
         
@@ -68,7 +69,6 @@ document.getElementById('registrationForm').addEventListener('submit', async (e)
 
         submitBtn.innerText = "Kayıt Blokzincirine Yazılıyor...";
 
-        // Firestore Veritabanına Ekle
         await addDoc(collection(db, "applications"), {
             teamName: teamName,
             logoUrl: logoUrl,
@@ -81,7 +81,6 @@ document.getElementById('registrationForm').addEventListener('submit', async (e)
             timestamp: new Date()
         });
 
-        // Başarılı Popup Açılması
         showPopup("BAŞVURU ALINDI!", "Takım başvurunuz başarıyla sisteme kaydedildi. Admin onayından sonra kaptana e-posta ile bilgi verilecektir.", true);
         document.getElementById('registrationForm').reset();
     } catch (error) {
