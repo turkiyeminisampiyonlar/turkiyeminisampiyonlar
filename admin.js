@@ -16,10 +16,10 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 const provider = new GoogleAuthProvider();
 
-// EmailJS Başlatma
+// EmailJS Başlatma Protokolü
 emailjs.init("a7hcviMd81teC1UcX");
 
-// KESİN YETKİLİ MAİL ADRESİ
+// KESİN YETKİLİ ORGANİZATÖR MAİLİ
 const ADMIN_EMAIL = "necron.offical@gmail.com";
 
 const loginBtn = document.getElementById('googleLoginBtn');
@@ -31,56 +31,54 @@ const applicationsList = document.getElementById('applicationsList');
 const authStatusIndicator = document.getElementById('authStatusIndicator');
 const authStatusText = document.getElementById('authStatusText');
 
-// GİRİŞ TETİKLEYİCİSİ
+// GOOGLE GİRİŞ YAPILDIĞINDA
 loginBtn.addEventListener('click', async () => {
     try {
         loginError.style.display = 'none';
         await signInWithPopup(auth, provider);
     } catch (error) {
         console.error(error);
-        loginError.innerText = "Giriş işlemi başarısız oldu.";
+        loginError.innerText = "Giriş işlemi sırasında teknik bir sorun oluştu.";
         loginError.style.display = 'block';
     }
 });
 
-// ÇIKIŞ TETİKLEYİCİSİ
+// GÜVENLİ ÇIKISH
 logoutBtn.addEventListener('click', () => {
     signOut(auth);
 });
 
-// KULLANICI DURUMU VE GÜVENLİK FİLTRESİ
+// GÜVENLİK FİLTRESİ VE OTURUM KONTROLÜ
 onAuthStateChanged(auth, async (user) => {
     if (user) {
-        // MAİL KONTROLÜ (KRİTİK GÜVENLİK ALANI)
         if (user.email === ADMIN_EMAIL) {
             loginSection.style.display = 'none';
             dashboardSection.style.display = 'block';
             logoutBtn.style.display = 'inline-block';
             authStatusIndicator.style.background = '#00ff87';
-            authStatusIndicator.style.shadow = '0 0 8px #00ff87';
+            authStatusIndicator.style.boxShadow = '0 0 8px #00ff87';
             authStatusText.innerText = "Yönetici";
             
-            // Başvuruları Yükle
+            // Başvuruları Listele
             loadApplications();
         } else {
-            // Yetkisiz Giriş Durumunda Sistemden Anında At ve Hata Göster
-            loginError.innerText = `Erişim Engellendi! ${user.email} adresi yetkili değil.`;
+            loginError.innerText = `Erişim Reddedildi! ${user.email} yetkili bir hesap değil.`;
             loginError.style.display = 'block';
             authStatusIndicator.style.background = '#ff5f56';
             authStatusText.innerText = "Yasaklandı";
             await signOut(auth);
         }
     } else {
-        // Giriş Yapılmamışsa Arayüzü Koru
         loginSection.style.display = 'block';
         dashboardSection.style.display = 'none';
         logoutBtn.style.display = 'none';
         authStatusIndicator.style.background = '#ff5f56';
+        authStatusIndicator.style.boxShadow = '0 0 6px #ff5f56';
         authStatusText.innerText = "Kilitli";
     }
 });
 
-// BAŞVURULARI VERİTABANINDAN ALMA VE AKORDEON DÜZENİ
+// BAŞVURULARI LİSTELEME VE AKORDEON YAPISI
 async function loadApplications() {
     applicationsList.innerHTML = '<p style="color: #8e95a5; text-align: center; padding: 20px;">Başvurular güvenli sunucudan alınıyor...</p>';
     
@@ -92,11 +90,11 @@ async function loadApplications() {
 
         querySnapshot.forEach((documentSnapshot) => {
             const data = documentSnapshot.data();
+            const docId = documentSnapshot.id;
             
             if (data.status === 'bekliyor') {
                 count++;
                 
-                // Ana Başvuru Kartı Konteyneri
                 const itemContainer = document.createElement('div');
                 itemContainer.style.marginBottom = '15px';
                 itemContainer.style.background = 'rgba(13, 15, 20, 0.6)';
@@ -104,13 +102,7 @@ async function loadApplications() {
                 itemContainer.style.borderRadius = '8px';
                 itemContainer.style.overflow = 'hidden';
 
-                // Tıklanabilir Takım İsmi Başlığı (Buton Gibi Tasarlandı)
                 const toggleHeader = document.createElement('div');
-                toggleHeader.className = 'accordion-header';
-                toggleHeader.innerHTML = `
-                    <span style="font-weight: 700; color: #fff; font-size: 16px;">🛡️ Takım: ${data.teamName}</span>
-                    <span class="arrow-icon" style="color: #8e95a5; font-size: 12px; font-weight: bold;">[ DETAYLARI GÖSTER ▼ ]</span>
-                `;
                 toggleHeader.style.padding = '16px 20px';
                 toggleHeader.style.cursor = 'pointer';
                 toggleHeader.style.display = 'flex';
@@ -118,18 +110,23 @@ async function loadApplications() {
                 toggleHeader.style.alignItems = 'center';
                 toggleHeader.style.background = '#11141a';
                 toggleHeader.style.transition = '0.2s';
+                toggleHeader.innerHTML = `
+                    <span style="font-weight: 700; color: #fff; font-size: 16px;">🛡️ Takım: ${data.teamName}</span>
+                    <span class="arrow-icon" style="color: #8e95a5; font-size: 12px; font-weight: bold;">[ DETAYLARI GÖSTER ▼ ]</span>
+                `;
 
-                // Üzerine gelince renk değişimi
                 toggleHeader.addEventListener('mouseenter', () => toggleHeader.style.background = '#171b24');
                 toggleHeader.addEventListener('mouseleave', () => toggleHeader.style.background = '#11141a');
 
-                // Gizli Detay Paneli Bölümü
                 const detailPanel = document.createElement('div');
-                detailPanel.className = 'accordion-content';
-                detailPanel.style.display = 'none'; // İlk başta gizli
+                detailPanel.style.display = 'none';
                 detailPanel.style.padding = '25px';
                 detailPanel.style.borderTop = '1px solid rgba(255,255,255,0.03)';
                 detailPanel.style.background = 'rgba(11, 12, 16, 0.4)';
+
+                // Kaptan e-postası güvenli veri olarak saklanır
+                const captainEmail = data.players && data.players[0] ? data.players[0].email : '';
+                const teamNameData = data.teamName;
 
                 detailPanel.innerHTML = `
                     <div style="display: flex; flex-wrap: wrap; gap: 25px; margin-bottom: 25px; align-items: flex-start;">
@@ -160,13 +157,13 @@ async function loadApplications() {
                         </div>
                     </div>
 
-                    <div style="display: flex; gap: 12px; border-top: 1px solid rgba(255,255,255,0.04); padding-top: 15px;">
-                        <button class="btn-approve-${documentSnapshot.id}" style="flex: 1; padding: 12px; background: linear-gradient(90deg, #00ff87, #00d27a); color: #0a0b0d; border: none; font-weight: 800; border-radius: 6px; cursor: pointer; text-transform: uppercase; font-size: 12px; letter-spacing: 0.5px;">🟢 Başvuruyu Onayla</button>
-                        <button class="btn-reject-${documentSnapshot.id}" style="flex: 1; padding: 12px; background: rgba(255, 95, 86, 0.1); color: #ff5f56; border: 1px solid rgba(255, 95, 86, 0.2); font-weight: 800; border-radius: 6px; cursor: pointer; text-transform: uppercase; font-size: 12px; letter-spacing: 0.5px;">🔴 Başvuruyu Reddet</button>
+                    <div class="action-buttons-container" style="display: flex; gap: 12px; border-top: 1px solid rgba(255,255,255,0.04); padding-top: 15px;">
+                        <button class="btn-approve-action" style="flex: 1; padding: 12px; background: linear-gradient(90deg, #00ff87, #00d27a); color: #0a0b0d; border: none; font-weight: 800; border-radius: 6px; cursor: pointer; text-transform: uppercase; font-size: 12px; letter-spacing: 0.5px;">🟢 Başvuruyu Onayla</button>
+                        <button class="btn-reject-action" style="flex: 1; padding: 12px; background: rgba(255, 95, 86, 0.1); color: #ff5f56; border: 1px solid rgba(255, 95, 86, 0.2); font-weight: 800; border-radius: 6px; cursor: pointer; text-transform: uppercase; font-size: 12px; letter-spacing: 0.5px;">🔴 Başvuruyu Reddet</button>
                     </div>
                 `;
 
-                // Tıklayınca Açılma / Kapanma Animasyon Mantığı
+                // Tıklayınca Akordeon Açma Mantığı
                 toggleHeader.addEventListener('click', () => {
                     const isOpen = detailPanel.style.display === 'block';
                     detailPanel.style.display = isOpen ? 'none' : 'block';
@@ -174,17 +171,18 @@ async function loadApplications() {
                     toggleHeader.querySelector('.arrow-icon').style.color = isOpen ? '#8e95a5' : '#f39c12';
                 });
 
+                // Hata Vermeyi Engelleyen Dinamik Buton Dinleyicileri (JS Event Listeners)
+                detailPanel.querySelector('.btn-approve-action').addEventListener('click', () => {
+                    executeAdminAction(docId, 'onayla', captainEmail, teamNameData, detailPanel);
+                });
+
+                detailPanel.querySelector('.btn-reject-action').addEventListener('click', () => {
+                    executeAdminAction(docId, 'reddet', captainEmail, teamNameData, detailPanel);
+                });
+
                 itemContainer.appendChild(toggleHeader);
                 itemContainer.appendChild(detailPanel);
                 applicationsList.appendChild(itemContainer);
-
-                // Dinamik Buton Olayları (Detay paneli oluşturulduktan sonra atanır)
-                detailPanel.querySelector(`.btn-approve-${documentSnapshot.id}`).addEventListener('click', () => {
-                    handleAction(documentSnapshot.id, 'onayla', data.players[0].email, data.teamName);
-                });
-                detailPanel.querySelector(`.btn-reject-${documentSnapshot.id}`).addEventListener('click', () => {
-                    handleAction(documentSnapshot.id, 'reddet', data.players[0].email, data.teamName);
-                });
             }
         });
 
@@ -193,38 +191,40 @@ async function loadApplications() {
         }
     } catch (error) {
         console.error(error);
-        applicationsList.innerHTML = '<p style="color: #ff5f56; text-align: center; padding: 20px;">Veritabanından okuma yapılırken kritik hata oluştu.</p>';
+        applicationsList.innerHTML = '<p style="color: #ff5f56; text-align: center; padding: 20px;">Veritabanından veri okunurken bir sorun oluştu.</p>';
     }
 }
 
-// ONAY / RED AKSİYON FONKSİYONU
-window.handleAction = async function(docId, action, p1Email, teamName) {
+// EMAILJS VE FIRESTORE'U AYNI ANDA TETİKLEYEN ANA AKSİYON FONKSİYONU
+async function executeAdminAction(docId, action, p1Email, teamName, detailPanel) {
     const isApproved = action === 'onayla';
     const templateId = isApproved ? 'template_01nnh1s' : 'template_cpy48jt';
     const serviceId = 'service_bftdxcy';
 
-    // İşlem yapılan butonları korumak adına geçici pasifize uyarısı
-    const targetPanel = document.querySelector(`.btn-approve-${docId}`).parentElement;
-    targetPanel.innerHTML = `<p style="color: #f39c12; font-weight: bold; font-size: 13px; text-align: center; width: 100%;">⚙️ İşlem gerçekleştiriliyor, e-posta protokolleri tetiklendi...</p>`;
+    const actionContainer = detailPanel.querySelector('.action-buttons-container');
+    const oldHtmlBackup = actionContainer.innerHTML; // Hata durumunda butonları geri getirmek için yedek
+    
+    // İşlem başladığında butonu yükleniyor moduna al
+    actionContainer.innerHTML = `<p style="color: #f39c12; font-weight: bold; font-size: 13px; text-align: center; width: 100%; padding: 10px 0;">⚙️ İşlem gerçekleştiriliyor, e-posta teslim ediliyor...</p>`;
 
     try {
-        // Otomatik E-Posta Gönderimi (EmailJS)
+        // 1. Adım: EmailJS Protokolü ile Kaptana Mail Gönderimi
         await emailjs.send(serviceId, templateId, {
             to_email: p1Email,
             team_name: teamName
         });
 
-        // Firestore Durum Güncellemesi
+        // 2. Adım: Firebase Firestore Durum Güncellemesi
         const docRef = doc(db, "applications", docId);
         await updateDoc(docRef, {
             status: isApproved ? "onaylandi" : "reddedildi"
         });
 
-        alert(`Takım başarıyla ${isApproved ? 'ONAYLANDI' : 'REDDEDİLDİ'}! Kaptana sistem e-postası teslim edildi.`);
-        loadApplications(); // Listeyi yenile
+        alert(`İşlem Başarılı! Takım ${isApproved ? 'ONAYLANDI' : 'REDDEDİLDİ'} ve ${p1Email} adresine bilgilendirme postası gönderildi.`);
+        loadApplications(); // Listeyi yenile ve onaylanan takımı ekrandan kaldır
     } catch (error) {
-        console.error(error);
-        alert("Aksiyon gerçekleştirilirken teknik bir e-posta hatası meydana geldi.");
-        loadApplications();
+        console.error("E-posta/Veritabanı Hatası: ", error);
+        alert(`Kritik Hata: E-posta gönderilemedi! Lütfen EmailJS kotalarınızı veya şablon (Template) ID ayarlarınızı kontrol edin.`);
+        actionContainer.innerHTML = oldHtmlBackup; // Butonları ekrana geri yükle
     }
 }
