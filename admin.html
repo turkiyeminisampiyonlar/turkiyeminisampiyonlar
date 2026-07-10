@@ -3,25 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TMŞ - Admin Paneli</title>
+    <title>TMŞ - Admin Kontrol Merkezi</title>
     <link rel="stylesheet" href="style.css">
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 </head>
 <body>
-    <div class="container">
+    <div class="glass-container" style="max-width: 900px;">
         <header>
             <img src="tmş.png" alt="TMŞ Logo" id="logo" style="max-width: 100px;">
-            <h1>Admin Paneli</h1>
+            <h1>Yönetim Paneli</h1>
+            <p class="subtitle">Başvuruları Doğrula ve E-Posta Gönder</p>
         </header>
 
-        <div id="loginSection">
-            <button id="googleLoginBtn">Google ile Giriş Yap</button>
-            <p id="loginError" style="color: red;"></p>
+        <div id="loginSection" class="text-center" style="padding: 40px 0;">
+            <button id="googleLoginBtn" class="btn-primary">🌐 Google ile Admin Girişi</button>
+            <p id="loginError" style="color: #ff0055; margin-top: 15px; font-weight: bold;"></p>
         </div>
 
         <div id="dashboardSection" style="display: none;">
-            <button id="logoutBtn" style="background-color: red;">Çıkış Yap</button>
-            <h2>Gelen Başvurular</h2>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; border-bottom: 1px solid #252932; padding-bottom: 15px;">
+                <h2 style="margin:0; border:none; padding:0; color:#fff;">Gelen Başvuru Havuzu</h2>
+                <button id="logoutBtn" class="btn-secondary" style="background-color: #ff0055; border:none; color:white; padding:8px 20px;">Güvenli Çıkış</button>
+            </div>
             <div id="applicationsList"></div>
         </div>
     </div>
