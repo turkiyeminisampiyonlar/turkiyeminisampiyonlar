@@ -16,18 +16,46 @@ const db = getFirestore(app);
 
 const IMGBB_API_KEY = "43c8e0a8c3277336886330d1172f988a"; 
 
+// MODAL AÇMA / KAPAMA MANTIĞI
+const rulesModal = document.getElementById("rulesModal");
+const statusModal = document.getElementById("statusModal");
+
+document.getElementById("openRulesBtn").addEventListener("click", () => rulesModal.style.display = "flex");
+document.getElementById("closeRules").addEventListener("click", () => rulesModal.style.display = "none");
+document.getElementById("closeStatusBtn").addEventListener("click", () => statusModal.style.display = "none");
+
+// Dışarı tıklayınca kapansınlar
+window.addEventListener("click", (e) => {
+    if (e.target === rulesModal) rulesModal.style.display = "none";
+    if (e.target === statusModal) statusModal.style.display = "none";
+});
+
+// Modern Popup Tetikleyici Fonksiyon
+function showPopup(title, msg, isSuccess = true) {
+    document.getElementById("statusTitle").innerText = title;
+    document.getElementById("statusMessage").innerText = msg;
+    const iconDiv = document.getElementById("statusIcon");
+    
+    if(isSuccess) {
+        iconDiv.innerHTML = `<span style="font-size: 50px; color: #00ff87;">✓</span>`;
+    } else {
+        iconDiv.innerHTML = `<span style="font-size: 50px; color: #ff0055;">✕</span>`;
+    }
+    statusModal.style.display = "flex";
+}
+
+// FORM SUBMIT İŞLEMİ
 document.getElementById('registrationForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const submitBtn = document.getElementById('submitBtn');
-    const statusMsg = document.getElementById('statusMessage');
     submitBtn.disabled = true;
-    submitBtn.innerText = "Logonuz Yükleniyor...";
+    submitBtn.innerText = "Logonuz Espor Sunucularına Yükleniyor...";
 
     const teamName = document.getElementById('teamName').value;
     const logoFile = document.getElementById('teamLogo').files[0];
 
     try {
-        // ImgBB'ye resmi yükle
+        // ImgBB API ile Fotoğrafı Yükle
         const formData = new FormData();
         formData.append('image', logoFile);
         
@@ -38,9 +66,9 @@ document.getElementById('registrationForm').addEventListener('submit', async (e)
         const imgData = await imgResponse.json();
         const logoUrl = imgData.data.url;
 
-        submitBtn.innerText = "Başvuru Kaydediliyor...";
+        submitBtn.innerText = "Kayıt Blokzincirine Yazılıyor...";
 
-        // Veritabanına yaz
+        // Firestore Veritabanına Ekle
         await addDoc(collection(db, "applications"), {
             teamName: teamName,
             logoUrl: logoUrl,
@@ -53,15 +81,14 @@ document.getElementById('registrationForm').addEventListener('submit', async (e)
             timestamp: new Date()
         });
 
-        statusMsg.style.color = "lightgreen";
-        statusMsg.innerText = "Başvurunuz başarıyla alındı!";
+        // Başarılı Popup Açılması
+        showPopup("BAŞVURU ALINDI!", "Takım başvurunuz başarıyla sisteme kaydedildi. Admin onayından sonra kaptana e-posta ile bilgi verilecektir.", true);
         document.getElementById('registrationForm').reset();
     } catch (error) {
         console.error(error);
-        statusMsg.style.color = "red";
-        statusMsg.innerText = "Bir hata oluştu. Lütfen tekrar deneyin.";
+        showPopup("HATA OLUŞTU!", "Başvuru sırasında teknik bir aksaklık yaşandı. Lütfen bilgileri kontrol edip tekrar deneyin.", false);
     } finally {
         submitBtn.disabled = false;
-        submitBtn.innerText = "Başvuruyu Gönder";
+        submitBtn.innerText = "Savaşa Katıl";
     }
 });
