@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TMŞ - Admin Paneli</title>
+    <link rel="stylesheet" href="style.css">
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <img src="tmş.png" alt="TMŞ Logo" id="logo" style="max-width: 100px;">
+            <h1>Admin Paneli</h1>
+        </header>
+
+        <div id="loginSection">
+            <button id="googleLoginBtn">Google ile Giriş Yap</button>
+            <p id="loginError" style="color: red;"></p>
+        </div>
+
+        <div id="dashboardSection" style="display: none;">
+            <button id="logoutBtn" style="background-color: red;">Çıkış Yap</button>
+            <h2>Gelen Başvurular</h2>
+            <div id="applicationsList"></div>
+        </div>
+    </div>
+
+    <script type="module" src="admin.js"></script>
+</body>
+</html>
