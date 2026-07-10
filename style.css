@@ -7,7 +7,7 @@ body {
         radial-gradient(circle at top right, rgba(243, 156, 18, 0.08), transparent 40%),
         radial-gradient(circle at bottom left, rgba(96, 239, 255, 0.05), transparent 40%); 
     min-height: 100vh; 
-    padding: 90px 12px 30px 12px; /* Mobil cihazlar için kenar boşlukları daraltıldı */
+    padding: 90px 12px 30px 12px;
 }
 
 /* YENİ NESİL SABİT ÜST BAR (NAVBAR) */
@@ -111,7 +111,7 @@ input:focus { border-color: #f39c12; outline: none; box-shadow: 0 0 10px rgba(24
     .top-navbar { padding: 0 12px; }
     .nav-links { gap: 10px; }
     .nav-links a { font-size: 11px; }
-    .window-title { display: none; } /* Küçük ekranlarda başlığı gizle butonlar sığsın */
+    .window-title { display: none; }
     h1 { font-size: 22px; }
-    .btn-primary, .btn-secondary { width: 100%; } /* Butonlar mobilde alt alta tam kaplasın */
+    .btn-primary, .btn-secondary { width: 100%; }
 }
