@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
-import { getFirestore, collection, getDocs, doc, updateDoc } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
+import { getFirestore, collection, getDocs, doc, updateDoc, addDoc } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyCa81wdLtxll68b1anajvH0wRTnGKVaLs4",
@@ -16,7 +16,6 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 const provider = new GoogleAuthProvider();
 
-// EmailJS Başlatma
 emailjs.init("a7hcviMd81teC1UcX");
 
 const ADMIN_EMAIL = "necron.offical@gmail.com";
@@ -25,115 +24,138 @@ const loginBtn = document.getElementById('googleLoginBtn');
 const logoutBtn = document.getElementById('logoutBtn');
 const loginSection = document.getElementById('loginSection');
 const dashboardSection = document.getElementById('dashboardSection');
+const adminSelect = document.getElementById('adminTournamentSelect');
+const tournamentForm = document.getElementById('tournamentForm');
 const applicationsList = document.getElementById('applicationsList');
 const loginError = document.getElementById('loginError');
 
 loginBtn.addEventListener('click', () => {
     signInWithPopup(auth, provider).catch(err => {
         console.error(err);
-        loginError.innerText = "Giriş penceresi açılırken hata oluştu.";
+        loginError.innerText = "Giriş ekranı açılırken hata!";
     });
 });
 
-logoutBtn.addEventListener('click', () => {
-    signOut(auth);
-});
+logoutBtn.addEventListener('click', () => { signOut(auth); });
 
 onAuthStateChanged(auth, (user) => {
     if (user) {
         if (user.email === ADMIN_EMAIL) {
             loginSection.style.display = 'none';
             dashboardSection.style.display = 'block';
-            loadApplications();
+            syncAdminPanel();
         } else {
-            loginError.innerText = "Yetkisiz giriş denemesi! Sadece admin girebilir.";
+            loginError.innerText = "Yetkisiz hesap! Giriş engellendi.";
             signOut(auth);
         }
     } else {
         loginSection.style.display = 'block';
         dashboardSection.style.display = 'none';
-        applicationsList.innerHTML = '';
     }
 });
 
-async function loadApplications() {
-    applicationsList.innerHTML = '<p style="color: #f39c12; font-weight: bold;">Başvurular Havuzdan Çekiliyor...</p>';
+async function syncAdminPanel() {
+    try {
+        const snap = await getDocs(collection(db, "tournaments"));
+        adminSelect.innerHTML = '<option value="new">++ Yeni Turnuva Ekle ++</option>';
+        snap.forEach(d => {
+            adminSelect.innerHTML += `<option value="${d.id}">${d.data().title}</option>`;
+        });
+    } catch (e) { console.error(e); }
+
+    applicationsList.innerHTML = '<p style="color:#f39c12;">Başvurular taranıyor...</p>';
     try {
         const querySnapshot = await getDocs(collection(db, "applications"));
         applicationsList.innerHTML = '';
         
-        querySnapshot.forEach((documentSnapshot) => {
-            const data = documentSnapshot.data();
+        querySnapshot.forEach((docSnap) => {
+            const data = docSnap.data();
             if (data.status === "bekliyor") {
                 const card = document.createElement('div');
-                card.className = 'application-card';
+                card.style = "background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #252932;";
                 
-                // Güvenli veri okuma (Eksik alan varsa çökmesini önler)
-                const p1Name = data.players?.[0]?.name || 'Bilinmiyor';
-                const p1Email = data.players?.[0]?.email || '';
-                const p1Yt = data.players?.[0]?.yt || '#';
-                
-                const p2Name = data.players?.[1]?.name || 'Bilinmiyor';
-                const p2Email = data.players?.[1]?.email || '';
-                const p2Yt = data.players?.[1]?.yt || '#';
-                
-                const p3Name = data.players?.[2]?.name || 'Bilinmiyor';
-                const p3Email = data.players?.[2]?.email || '';
-                const p3Yt = data.players?.[2]?.yt || '#';
+                let playersHtml = '';
+                (data.players || []).forEach((p, idx) => {
+                    playersHtml += `<p style="font-size:12px; margin: 3px 0;"><b>Oyuncu ${idx+1}:</b> ${p.name || ''} - <a href="${p.yt || '#'}" target="_blank" style="color:#60efff;">Sosyal Medya</a></p>`;
+                });
 
                 card.innerHTML = `
-                    <div style="background: rgba(255,255,255,0.02); padding: 15px; border-radius: 10px; margin-bottom: 15px; border: 1px solid rgba(255,255,255,0.05);">
-                        <img src="${data.logoUrl || ''}" alt="Takım Logosu" style="max-width: 80px; border-radius: 8px; margin-bottom: 10px;">
-                        <h3>Takım: ${data.teamName || 'İsimsiz Takım'}</h3>
-                        <p style="margin: 5px 0;"><b>Oyuncu 1:</b> ${p1Name} | ${p1Email} | <a href="${p1Yt}" target="_blank" style="color: #f39c12;">Medya</a></p>
-                        <p style="margin: 5px 0;"><b>Oyuncu 2:</b> ${p2Name} | ${p2Email} | <a href="${p2Yt}" target="_blank" style="color: #f39c12;">Medya</a></p>
-                        <p style="margin: 5px 0;"><b>Oyuncu 3:</b> ${p3Name} | ${p3Email} | <a href="${p3Yt}" target="_blank" style="color: #f39c12;">Medya</a></p>
-                        <div class="btn-group" style="margin-top: 15px; display: flex; gap: 10px;">
-                            <button class="btn-primary" style="padding: 8px 20px; font-size: 14px; background: #00ff87; color: #0a0b0d; border: none;" onclick="handleAction('${documentSnapshot.id}', 'onayla', '${p1Email}', '${data.teamName || ''}')">Kabul Et</button>
-                            <button class="btn-secondary" style="padding: 8px 20px; font-size: 14px; background: #ff0055; color: white; border: none;" onclick="handleAction('${documentSnapshot.id}', 'reddet', '${p1Email}', '${data.teamName || ''}')">Reddet</button>
-                        </div>
+                    <p style="font-size:11px; color:#f39c12; font-weight:700; text-transform:uppercase;">🏆 ${data.tournamentTitle || 'Belirsiz Turnuva'}</p>
+                    <h4 style="margin: 5px 0; color:#fff;">Takım: ${data.teamName || 'İsimsiz'}</h4>
+                    <img src="${data.logoUrl || ''}" style="max-height:50px; border-radius:4px; margin-bottom:5px;">
+                    ${playersHtml}
+                    <div style="margin-top:10px; display:flex; gap:8px;">
+                        <button class="btn-primary" style="padding:5px 12px; font-size:12px; background:#00ff87; color:#000;" id="ok-${docSnap.id}">Onayla</button>
+                        <button class="btn-secondary" style="padding:5px 12px; font-size:12px; background:#ff0055; color:#fff; border:none;" id="no-${docSnap.id}">Reddet</button>
                     </div>
                 `;
                 applicationsList.appendChild(card);
+
+                card.querySelector(`#ok-${docSnap.id}`).addEventListener('click', () => handleAction(docSnap.id, 'onayla', data.players?.[0]?.email, data.teamName));
+                card.querySelector(`#no-${docSnap.id}`).addEventListener('click', () => handleAction(docSnap.id, 'reddet', data.players?.[0]?.email, data.teamName));
             }
         });
-        
+
         if (applicationsList.innerHTML === '') {
-            applicationsList.innerHTML = '<p>Bekleyen başvuru yok.</p>';
+            applicationsList.innerHTML = '<p style="color:#727991; font-size:13px;">Bekleyen yeni kayıt bulunmuyor.</p>';
         }
     } catch (error) {
-        console.error("Veri yükleme hatası:", error);
-        applicationsList.innerHTML = `
-            <p style="color: #ff0055; font-weight: bold; background: rgba(255,0,85,0.1); padding: 15px; border-radius: 8px;">
-                Başvurular yüklenemedi!<br>
-                Hata Nedeni: ${error.message}<br><br>
-                <small style="color: #b5bdcd; font-weight: normal;">Not: Eğer "Missing or insufficient permissions" hatası alıyorsanız, Firebase Console > Firestore Database > Rules kısmından okuma yetkilerini kontrol edin veya admin hesabıyla giriş yaptığınızdan emin olun.</small>
-            </p>`;
+        console.error(error);
+        applicationsList.innerHTML = `<p style="color:#ff0055; font-size:13px;">Hata oluştu: ${error.message}</p>`;
     }
 }
 
-window.handleAction = async function(docId, action, p1Email, teamName) {
-    const isApproved = action === 'onayla';
-    const templateId = isApproved ? 'template_01nnh1s' : 'template_cpy48jt';
-    const serviceId = 'service_bftdxcy';
+adminSelect.addEventListener('change', async (e) => {
+    if (e.target.value === 'new') { tournamentForm.reset(); return; }
+    try {
+        const snap = await getDocs(collection(db, "tournaments"));
+        snap.forEach(d => {
+            if (d.id === e.target.value) {
+                const t = d.data();
+                document.getElementById('tTitle').value = t.title || '';
+                document.getElementById('tDate').value = t.date || '';
+                document.getElementById('tReward').value = t.reward || '';
+                document.getElementById('tMaxTeams').value = t.maxTeams || '';
+            }
+        });
+    } catch (err) { console.error(err); }
+});
+
+tournamentForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const tId = adminSelect.value;
+    const tData = {
+        title: document.getElementById('tTitle').value,
+        date: document.getElementById('tDate').value,
+        reward: document.getElementById('tReward').value,
+        maxTeams: document.getElementById('tMaxTeams').value,
+        teamSize: "3"
+    };
 
     try {
-        // E-Posta Gönderimi
-        await emailjs.send(serviceId, templateId, {
-            to_email: p1Email,
-            team_name: teamName
-        });
+        if (tId === 'new') {
+            await addDoc(collection(db, "tournaments"), tData);
+            alert("Yeni turnuva başarıyla oluşturuldu.");
+        } else {
+            await updateDoc(doc(db, "tournaments", tId), tData);
+            alert("Mevcut turnuva esporcu verilerine zarar verilmeden güncellendi.");
+        }
+        tournamentForm.reset();
+        syncAdminPanel();
+    } catch (err) { alert("Hata: " + err.message); }
+});
 
-        // Veritabanını Güncelle
-        const docRef = doc(db, "applications", docId);
-        await updateDoc(docRef, {
-            status: isApproved ? "onaylandi" : "reddedildi"
-        });
-
-        alert(`İşlem başarılı! E-posta gönderildi.`);
-        loadApplications();
-    } catch (error) {
-        console.error("Hata:", error);
-        alert("Bir hata oluştu, e-posta gönderilememiş olabilir.");
-    }
-};
+async function handleAction(docId, action, p1Email, teamName) {
+    const isApproved = action === 'onayla';
+    try {
+        if (p1Email) {
+            await emailjs.send('service_bftdxcy', isApproved ? 'template_01nnh1s' : 'template_cpy48jt', {
+                to_email: p1Email,
+                team_name: teamName
+            });
+        }
+        await updateDoc(doc(db, "applications", docId), { status: isApproved ? "onaylandi" : "reddedildi" });
+        alert("Prosedür başarıyla tamamlandı.");
+        syncAdminPanel();
+    } catch (e) { alert("İşlem başarısız: " + e.message); }
+}
