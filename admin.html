@@ -3,57 +3,79 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TMŞ - Admin Kontrol Merkezi</title>
+    <title>TMŞ - Gelişmiş Yönetici Merkezi</title>
     <link rel="stylesheet" href="style.css">
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 </head>
 <body>
 
+    <div id="tms-loader"><div class="loader-spinner"></div><div class="loader-text">GÜVENLİ VERİ KANALI AÇILIYOR...</div></div>
+
     <nav class="top-navbar">
-        <div class="nav-logo">
-            <img src="tmş.png" alt="TMŞ Logo" class="nav-logo-img">
-            <span>TMŞ <span class="accent-text">ADMIN</span></span>
-        </div>
+        <a href="index.html" class="nav-logo">
+            <img src="tmş.png" alt="TMŞ" class="nav-logo-img">
+            <span>TMŞ <span class="accent-text">CORE CONTROL</span></span>
+        </a>
         <ul class="nav-links">
             <li><a href="index.html">Ana Sayfa</a></li>
-            <li><button id="logoutBtn" class="nav-admin-btn" style="display: none; background: rgba(255, 95, 86, 0.1); color: #ff5f56 !important; border-color: rgba(255, 95, 86, 0.2);">Güvenli Çıkış</button></li>
+            <li><button id="logoutBtn" class="nav-admin-btn" style="display:none; background:rgba(255,95,86,0.1); color:#ff5f56!important; border-color:rgba(255,95,86,0.2);">Çıkış Yap</button></li>
         </ul>
     </nav>
 
-    <div class="glass-window" style="max-width: 900px;">
+    <div class="glass-window">
         <div class="window-titlebar">
-            <div class="window-dots">
-                <span class="dot dot-close"></span>
-                <span class="dot dot-minimize"></span>
-                <span class="dot dot-maximize"></span>
-            </div>
-            <div class="window-title">tms_admin_core.exe</div>
-            <div class="window-status"><span class="status-indicator" id="authStatusIndicator" style="background:#ff5f56; box-shadow: 0 0 6px #ff5f56;"></span> <span id="authStatusText">Kilitli</span></div>
+            <div class="window-dots"><span class="dot dot-close"></span><span class="dot dot-minimize"></span><span class="dot dot-maximize"></span></div>
+            <div class="window-title">tms_admin_panel.exe</div>
+            <div class="window-status"><span class="status-indicator" id="authStatusIndicator" style="background:#ff5f56; box-shadow:0 0 6px #ff5f56;"></span> <span id="authStatusText">Kimlik Doğrulanmadı</span></div>
         </div>
 
         <div class="window-content">
-            <header>
-                <div class="logo-area">
-                    <img src="tmş.png" alt="TMŞ Logo" id="logo" style="max-width: 100px;">
-                </div>
-                <h1>Yönetim Paneli</h1>
-                <p class="subtitle">Turnuva Başvurularını Güvenli Yönetme Merkezi</p>
-            </header>
-
-            <div id="loginSection" class="text-center" style="padding: 30px 0;">
-                <p style="color: #8e95a5; margin-bottom: 20px; font-size: 14px;">Bu alana erişim sadece yetkili turnuva baş organizatörüne aittir.</p>
-                <button id="googleLoginBtn" class="btn-primary" style="background: linear-gradient(90deg, #4285F4, #34A853);">🌐 Google ile Admin Girişi</button>
-                <p id="loginError" style="color: #ff5f56; margin-top: 15px; font-weight: bold; font-size: 14px; display: none; background: rgba(255,95,86,0.1); padding: 10px; border-radius: 6px;"></p>
+            
+            <div id="loginSection" class="text-center" style="padding: 40px 0;">
+                <p style="color:#8e95a5; margin-bottom:20px; font-size:14px;">Platform yöneticileri yetkilendirilmiş Google hesapları ile giriş yapabilirler.</p>
+                <button id="googleLoginBtn" class="btn-primary" style="background:linear-gradient(90deg, #4285F4, #34A853); max-width:280px; margin:0 auto;">🌐 Google Admin Girişi</button>
+                <p id="loginError" style="color:#ff5f56; margin-top:15px; font-weight:bold; display:none; background:rgba(255,95,86,0.1); padding:10px; border-radius:6px; font-size:13px;"></p>
             </div>
 
             <div id="dashboardSection" style="display: none;">
-                <div style="margin-bottom: 25px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 15px;">
-                    <h2 style="font-size: 20px; color: #f39c12; border-left: 4px solid #f39c12; padding-left: 10px;">Gelen Takım Başvuruları</h2>
-                </div>
                 
-                <div id="applicationsList">
-                    <p style="color: #6f7685; text-align: center; padding: 20px;">Veriler şifreli kanaldan çekiliyor...</p>
+                <div class="admin-tabs">
+                    <button class="admin-tab-btn active" id="tabApplicationsBtn">Gelen Başvurular</button>
+                    <button class="admin-tab-btn" id="tabCreateTournamentBtn">Turnuva Oluştur</button>
+                    <button class="admin-tab-btn" id="tabManageAdminsBtn">Admin Ekle/Yönet</button>
                 </div>
+
+                <div id="tabApplicationsView">
+                    <div class="input-group" style="max-width:300px; margin-bottom:20px;">
+                        <label>Turnuvaya Göre Filtrele</label>
+                        <select id="filterTournamentSelect" style="background:#0d0f13; border:1px solid #1f242e; padding:10px; color:#fff; border-radius:6px; outline:none; font-size:13px;"></select>
+                    </div>
+                    <div id="applicationsList"></div>
+                </div>
+
+                <div id="tabCreateTournamentView" style="display: none;">
+                    <form id="createTournamentForm" class="form-section">
+                        <h2>Yeni Espor Turnuvası Yayınla</h2>
+                        <div class="input-group"><label>Turnuva Adı</label><input type="text" id="newTName" placeholder="Örn: TMŞ Kış Kupası 2026" required></div>
+                        <div class="input-group"><label>Son Katılım Tarihi</label><input type="date" id="newTDeadline" required></div>
+                        <div class="input-group"><label>Turnuva Logosu (Kare 1x1 Formatında)</label><input type="file" id="newTLogo" accept="image/*" required></div>
+                        <div class="input-group"><label>Kurallar, Ödüller ve Bilgiler</label><textarea id="newTRules" rows="6" placeholder="Her satıra bir kural gelecek şekilde detayları girin..." required></textarea></div>
+                        <button type="submit" id="createTBtn" class="btn-primary" style="margin-top:10px;">Turnuvayı Akışta Canlıya Al</button>
+                    </form>
+                </div>
+
+                <div id="tabManageAdminsView" style="display: none;">
+                    <div class="form-section">
+                        <h2>Yeni Yönetici Yetkilendir</h2>
+                        <div style="display:flex; gap:10px; margin-bottom:25px; align-items:flex-end;">
+                            <div class="input-group" style="flex:1; margin-bottom:0;"><label>E-Posta Adresi</label><input type="email" id="newAdminEmail" placeholder="admin@gmail.com" required></div>
+                            <button id="addAdminBtn" class="btn-primary" style="width:auto; padding:13px 25px;">Yetki Ver</button>
+                        </div>
+                        <h2>Mevcut Admin Veritabanı</h2>
+                        <ul id="adminEmailsList" style="list-style:none; padding:0; background:rgba(0,0,0,0.2); border-radius:10px; border:1px solid #1f242e;"></ul>
+                    </div>
+                </div>
+
             </div>
         </div>
     </div>
