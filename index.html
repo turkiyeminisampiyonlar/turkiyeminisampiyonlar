@@ -11,7 +11,7 @@
 
     <nav class="top-nav">
         <div class="nav-container">
-            <div class="nav-brand">🏆 TMŞ</div>
+            <div class="nav-brand">🏆 TMŞ Espor</div>
             <div class="nav-links">
                 <a href="admin.html" class="btn-admin-nav">👑 Admin Paneli</a>
             </div>
@@ -25,11 +25,30 @@
             </div>
             <h1>Türkiye Mini Şampiyonlar</h1>
             <p class="subtitle">Henüz keşfedilmemiş yeteneklerin düello meydanı!</p>
-            
-            <div class="hero-actions">
-                <a href="#register-section" class="btn-primary">⚔️ Hemen Başvur</a>
-            </div>
         </header>
+
+        <section class="info-section">
+            <div class="input-group">
+                <label for="tournamentSelect" class="section-label">🎮 Aktif Turnuva Seçin</label>
+                <select id="tournamentSelect" class="form-select"></select>
+            </div>
+            
+            <div id="tournamentDetails" class="details-box" style="display: none;">
+                <h3 id="viewTitle" class="tournament-title">Turnuva Yükleniyor...</h3>
+                <div class="details-grid">
+                    <div class="detail-item">📅 <b>Tarih:</b> <span id="viewDate">-</span></div>
+                    <div class="detail-item">🎁 <b>Ödül:</b> <span id="viewReward">-</span></div>
+                    <div class="detail-item">👥 <b>Takım Formatı:</b> <span id="viewSize">-</span> Kişilik</div>
+                </div>
+                
+                <div class="quota-wrapper">
+                    <div class="quota-bar-container">
+                        <div id="quotaFill" class="quota-bar-fill"></div>
+                    </div>
+                    <p id="quotaText" class="quota-text">Slot Durumu: Yükleniyor...</p>
+                </div>
+            </div>
+        </section>
 
         <section id="register-section" class="form-section">
             <h2>Kayıt Formu</h2>
@@ -44,28 +63,7 @@
                     <input type="file" id="teamLogo" accept="image/*" required>
                 </div>
 
-                <div class="squad-grid">
-                    <div class="player-card">
-                        <h3>Oyuncu 1 (Kaptan)</h3>
-                        <input type="text" id="p1Name" placeholder="Oyun İçi Adı (IGN)" required>
-                        <input type="email" id="p1Email" placeholder="E-Posta Adresi" required>
-                        <input type="text" id="p1YT" placeholder="YouTube / Sosyal Medya" required>
-                    </div>
-
-                    <div class="player-card">
-                        <h3>Oyuncu 2</h3>
-                        <input type="text" id="p2Name" placeholder="Oyun İçi Adı (IGN)" required>
-                        <input type="email" id="p2Email" placeholder="E-Posta Adresi" required>
-                        <input type="text" id="p2YT" placeholder="YouTube / Sosyal Medya" required>
-                    </div>
-
-                    <div class="player-card">
-                        <h3>Oyuncu 3</h3>
-                        <input type="text" id="p3Name" placeholder="Oyun İçi Adı (IGN)" required>
-                        <input type="email" id="p3Email" placeholder="E-Posta Adresi" required>
-                        <input type="text" id="p3YT" placeholder="YouTube / Sosyal Medya" required>
-                    </div>
-                </div>
+                <div id="dynamicPlayersGrid" class="squad-grid"></div>
 
                 <button type="submit" id="submitBtn" class="btn-submit">Savaşa Katıl</button>
             </form>
@@ -77,7 +75,7 @@
             <div id="statusIcon"></div>
             <h2 id="statusTitle">İşlem Durumu</h2>
             <p id="statusMessage"></p>
-            <button id="closeStatusBtn" class="btn-secondary" style="margin-top:15px; width:auto; padding:10px 30px;">Kapat</button>
+            <button id="closeStatusBtn" class="btn-secondary" style="margin-top:20px; padding:10px 30px;">Kapat</button>
         </div>
     </div>
 
