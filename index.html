@@ -3,126 +3,110 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TMŞ - Türkiye Mini Şampiyonlar</title>
+    <title>TMŞ - Türkiye Mini Şampiyonlar Platformu</title>
     <link rel="stylesheet" href="style.css">
-    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 </head>
 <body>
 
+    <div id="tms-loader">
+        <div class="loader-spinner"></div>
+        <div class="loader-text">TMŞ MATRIX BAŞLATILIYOR...</div>
+    </div>
+
     <nav class="top-navbar">
-        <div class="nav-logo">
+        <a href="index.html" class="nav-logo">
             <img src="tmş.png" alt="TMŞ Logo" class="nav-logo-img">
-            <span>TMŞ <span class="accent-text">PRO</span></span>
-        </div>
+            <span>TMŞ <span class="accent-text">PLATFORM</span></span>
+        </a>
         <ul class="nav-links">
-            <li><a href="#">Ana Sayfa</a></li>
-            <li><a href="#register-section">Kayıt Ol</a></li>
-            <li><a href="admin.html" class="nav-admin-btn" target="_blank">Yönetim Paneli</a></li>
+            <li><a href="index.html" class="active">Turnuvalar</a></li>
+            <li><a href="admin.html" class="nav-admin-btn">Yönetici Paneli ↗</a></li>
         </ul>
     </nav>
 
     <div class="glass-window">
         <div class="window-titlebar">
-            <div class="window-dots">
-                <span class="dot dot-close"></span>
-                <span class="dot dot-minimize"></span>
-                <span class="dot dot-maximize"></span>
-            </div>
-            <div class="window-title">tms_launcher.exe</div>
-            <div class="window-status"><span class="status-indicator"></span> Aktif</div>
+            <div class="window-dots"><span class="dot dot-close"></span><span class="dot dot-minimize"></span><span class="dot dot-maximize"></span></div>
+            <div class="window-title">tms_client_hub.exe</div>
+            <div class="window-status"><span class="status-indicator"></span> <span>Sistem Aktif</span></div>
         </div>
 
         <div class="window-content">
-            <header>
-                <div class="logo-area">
-                    <img src="tmş.png" alt="TMŞ Logo" id="logo">
+            
+            <div id="tournamentHubView">
+                <div style="text-align: center; margin-bottom: 35px;">
+                    <h1 style="font-size: 28px; font-weight: 800; color: #fff;">Aktif Espor Turnuvaları</h1>
+                    <p style="color: #8e95a5; font-size: 13.5px; margin-top: 5px;">Katılmak istediğiniz turnuvayı seçip kadronuzu kaydedin.</p>
                 </div>
-                <h1>Türkiye Mini Şampiyonlar</h1>
-                <p class="subtitle">Henüz keşfedilmemiş yeteneklerin düello meydanı!</p>
-                
-                <div class="hero-actions">
-                    <button id="openRulesBtn" class="btn-secondary">📜 Turnuva Kuralları</button>
-                    <a href="#register-section" class="btn-primary">⚔️ Hemen Başvur</a>
+
+                <div class="search-container">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" id="searchInput" class="search-input" placeholder="Turnuva adı ara (Örn: M yazarak filtreleyin)...">
                 </div>
-            </header>
 
-            <section id="register-section" class="form-section">
-                <h2>Kayıt Formu</h2>
-                <form id="registrationForm">
-                    <div class="input-group">
-                        <label>Takım İsmi</label>
-                        <input type="text" id="teamName" placeholder="Örn: NVO (Oyuncu adı olamaz)" required>
-                    </div>
-
-                    <div class="input-group">
-                        <label>Takım Logosu</label>
-                        <input type="file" id="teamLogo" accept="image/*" required>
-                    </div>
-
-                    <div class="squad-grid">
-                        <div class="player-card">
-                            <h3>Oyuncu 1 (Kaptan)</h3>
-                            <input type="text" id="p1Name" placeholder="Oyun İçi Adı (IGN)" required>
-                            <input type="email" id="p1Email" placeholder="E-Posta Adresi" required>
-                            <input type="text" id="p1YT" placeholder="YouTube / Sosyal Medya" required>
-                        </div>
-
-                        <div class="player-card">
-                            <h3>Oyuncu 2</h3>
-                            <input type="text" id="p2Name" placeholder="Oyun İçi Adı (IGN)" required>
-                            <input type="email" id="p2Email" placeholder="E-Posta Adresi" required>
-                            <input type="text" id="p2YT" placeholder="YouTube / Sosyal Medya" required>
-                        </div>
-
-                        <div class="player-card">
-                            <h3>Oyuncu 3</h3>
-                            <input type="text" id="p3Name" placeholder="Oyun İçi Adı (IGN)" required>
-                            <input type="email" id="p3Email" placeholder="E-Posta Adresi" required>
-                            <input type="text" id="p3YT" placeholder="YouTube / Sosyal Medya" required>
-                        </div>
-                    </div>
-
-                    <button type="submit" id="submitBtn" class="btn-submit">Savaşa Katıl</button>
-                </form>
-            </section>
-        </div>
-    </div>
-
-    <div id="rulesModal" class="modal">
-        <div class="modal-content">
-            <span class="close-modal" id="closeRules">&times;</span>
-            <h2>📜 Turnuva Detayları ve Kuralları</h2>
-            <div class="rules-scrollable">
-                <p><strong>TMŞ Nedir?</strong> Türkiye'deki henüz keşfedilmemiş yetenekli oyuncuları bir araya getiren yeni bir turnuva oluşumudur.</p>
-                <p><strong>Turnuva Tarihleri:</strong> Turnuva, 31 Ekim - 1 Kasım 2026 ile 7 - 8 Kasım 2026 tarihleri arasında (hafta sonları) gerçekleştirilecektir.</p>
-                
-                <h3>1. Katılım ve Takım Şartları</h3>
-                <ul>
-                    <li><strong>Takım Kadrosu:</strong> Her takım 3 oyuncudan oluşur.</li>
-                    <li><strong>Sosyal Medya Şartı:</strong> Turnuvaya katılacak her oyuncunun en az bir sosyal medya platformunda en az 30 takipçisi olması zorunludur.</li>
-                    <li><strong>Takım İsmi:</strong> Takım adı, doğrudan bir oyuncunun kullanıcı adı olamaz (Doğru: NVO ✓ | Yanlış: NECRONVO ❌).</li>
-                    <li><strong>Oyun Sürümü:</strong> Her oyuncunun Minecraft Java versiyonuna sahip olması gerekir (Crack sürümlerle katılım mümkündür).</li>
-                </ul>
-
-                <h3>2. Maç Esnası ve Güvenlik</h3>
-                <ul>
-                    <li><strong>Bağlantı Sorunları:</strong> Oyundan düşme durumunda, takım maça duraklatma olmaksızın kalan oyuncu sayısı ile devam eder.</li>
-                    <li><strong>Hile Yasağı:</strong> PvP sırasında hile (cheat) kullanmak kesinlikle yasaktır. Sunucu her saniye otomatik taranacaktır.</li>
-                    <li><strong>Ceza Protokolü:</strong> Hile kullanan oyunculara para cezası da dahil yaptırımlar uygulanacaktır.</li>
-                </ul>
-
-                <h3>3. Turnuva Ödülü</h3>
-                <p>🏆 Şampiyon olan takımın her bir oyuncusuna <strong>200 TL değerinde oyun/hediye kodları</strong> verilecektir.</p>
+                <div id="tournamentGrid" class="tournament-grid"></div>
             </div>
+
+            <div id="registrationFormView" style="display: none;">
+                <button id="backToHubBtn" class="btn-secondary" style="margin-bottom: 25px; padding: 8px 16px; font-size: 12px;">← Turnuvalara Geri Dön</button>
+                
+                <div id="selectedTournamentCard" style="background: rgba(255, 156, 18, 0.03); border: 1px dashed #f39c12; border-radius: 12px; padding: 25px; margin-bottom: 30px; display: flex; gap: 20px; align-items: center; flex-wrap: wrap;">
+                    </div>
+
+                <section class="form-section">
+                    <h2>Kayıt ve Kadro Formu</h2>
+                    <form id="registrationForm">
+                        <div class="input-group">
+                            <label>Takım İsmi</label>
+                            <input type="text" id="teamName" placeholder="Örn: NVO (Oyuncu adı olamaz)" required>
+                        </div>
+
+                        <div class="input-group">
+                            <label>Takım Logosu (Kare 1x1 Ölçüde)</label>
+                            <input type="file" id="teamLogo" accept="image/*" required>
+                            <span style="color: #6f7685; font-size: 11px;">Yüklenen logonun kare (en boy eşit) olması kontrol edilecektir.</span>
+                        </div>
+
+                        <div class="player-box">
+                            <h4>Kaptan / Oyuncu 1 Bilgileri</h4>
+                            <div class="input-grid">
+                                <div class="input-group"><label>Ad Soyad / Oyun İçi Nick</label><input type="text" id="p1Name" placeholder="Kaptan Nick" required></div>
+                                <div class="input-group"><label>E-Posta Adresi</label><input type="email" id="p1Email" placeholder="kaptan@gmail.com" required></div>
+                                <div class="input-group"><label>Sosyal Medya Linki (Min 30 Takipçi)</label><input type="url" id="p1YT" placeholder="https://youtube.com/..." required></div>
+                            </div>
+                        </div>
+
+                        <div class="player-box">
+                            <h4>Oyuncu 2 Bilgileri</h4>
+                            <div class="input-grid">
+                                <div class="input-group"><label>Ad Soyad / Oyun İçi Nick</label><input type="text" id="p2Name" placeholder="Oyuncu 2 Nick" required></div>
+                                <div class="input-group"><label>E-Posta Adresi</label><input type="email" id="p2Email" placeholder="p2@gmail.com" required></div>
+                                <div class="input-group"><label>Sosyal Medya Linki (Min 30 Takipçi)</label><input type="url" id="p2YT" placeholder="https://..." required></div>
+                            </div>
+                        </div>
+
+                        <div class="player-box">
+                            <h4>Oyuncu 3 Bilgileri</h4>
+                            <div class="input-grid">
+                                <div class="input-group"><label>Ad Soyad / Oyun İçi Nick</label><input type="text" id="p3Name" placeholder="Oyuncu 3 Nick" required></div>
+                                <div class="input-group"><label>E-Posta Adresi</label><input type="email" id="p3Email" placeholder="p3@gmail.com" required></div>
+                                <div class="input-group"><label>Sosyal Medya Linki (Min 30 Takipçi)</label><input type="url" id="p3YT" placeholder="https://..." required></div>
+                            </div>
+                        </div>
+
+                        <button type="submit" id="submitBtn" class="btn-primary">Savaşa Katıl ve Kadroyu Kaydet</button>
+                    </form>
+                </section>
+            </div>
+
         </div>
     </div>
 
     <div id="statusModal" class="modal">
-        <div class="modal-content text-center">
-            <div id="statusIcon"></div>
-            <h2 id="statusTitle">İşlem Durumu</h2>
-            <p id="statusMessage"></p>
-            <button id="closeStatusBtn" class="btn-secondary" style="margin-top:15px; width:auto; padding:10px 30px;">Kapat</button>
+        <div class="modal-content">
+            <h2 id="statusTitle" style="font-size: 20px; font-weight: 800; margin-bottom: 12px;">İşlem Tamamlandı</h2>
+            <p id="statusMessage" style="color: #b5bdcd; font-size: 14px; line-height: 1.5; margin-bottom: 20px;"></p>
+            <button id="closeStatusBtn" class="btn-secondary" style="width: auto; padding: 10px 20px;">Kapat</button>
         </div>
     </div>
 
