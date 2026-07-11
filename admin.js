@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
-import { getFirestore, collection, getDocs, doc, updateDoc, addDoc, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
+import { getFirestore, collection, getDocs, doc, updateDoc, addDoc, setDoc } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyCa81wdLtxll68b1anajvH0wRTnGKVaLs4",
@@ -18,125 +18,90 @@ const provider = new GoogleAuthProvider();
 
 emailjs.init("a7hcviMd81teC1UcX");
 const IMGBB_API_KEY = "43c8e0a8c3277336886330d1172f988a";
+const ADMIN_EMAIL = "necron.offical@gmail.com";
 
-// KÖK KURUCU ADMİN (Veritabanı boş olsa bile giriş yapabilir)
-const ROOT_ADMIN = "necron.offical@gmail.com";
-
-// DOM Obje Bağlantıları
+// DOM Elemanları
 const loader = document.getElementById('tms-loader');
-const loginSection = document.getElementById('loginSection');
-const dashboardSection = document.getElementById('dashboardSection');
 const loginBtn = document.getElementById('googleLoginBtn');
 const logoutBtn = document.getElementById('logoutBtn');
+const loginSection = document.getElementById('loginSection');
+const dashboardSection = document.getElementById('dashboardSection');
+const applicationsList = document.getElementById('applicationsList');
 const loginError = document.getElementById('loginError');
-const authStatusIndicator = document.getElementById('authStatusIndicator');
-const authStatusText = document.getElementById('authStatusText');
 
-// Sekme DOM Elementleri
-const tabAppsBtn = document.getElementById('tabApplicationsBtn');
-const tabCreateTBtn = document.getElementById('tabCreateTournamentBtn');
-const tabAdminsBtn = document.getElementById('tabManageAdminsBtn');
-const viewApps = document.getElementById('tabApplicationsView');
-const viewCreateT = document.getElementById('tabCreateTournamentView');
-const viewAdmins = document.getElementById('tabManageAdminsView');
+const tabAppsBtn = document.getElementById('tabAppsBtn');
+const tabCreateBtn = document.getElementById('tabCreateBtn');
+const viewApps = document.getElementById('viewApps');
+const viewCreate = document.getElementById('viewCreate');
 
 let tournamentsDataList = [];
+let allApplicationsList = [];
+let editingTournamentId = null;
 
-// GOOGLE AUTHENTICATION GİRİŞ TETİKLEYİCİSİ
-loginBtn.addEventListener('click', async () => {
-    try {
-        loginError.style.display = 'none';
-        await signInWithPopup(auth, provider);
-    } catch (e) {
-        loginError.innerText = "Bağlantı penceresi açılamadı.";
-        loginError.style.display = 'block';
-    }
+// Tab Değişim Mekanizması
+tabAppsBtn.addEventListener('click', () => {
+    tabAppsBtn.classList.add('active'); tabCreateBtn.classList.remove('active');
+    viewApps.style.display = 'block'; viewCreate.style.display = 'none';
+});
+tabCreateBtn.addEventListener('click', () => {
+    tabCreateBtn.classList.add('active'); tabAppsBtn.classList.remove('active');
+    viewApps.style.display = 'none'; viewCreate.style.display = 'block';
+});
+
+loginBtn.addEventListener('click', () => {
+    signInWithPopup(auth, provider).catch(err => console.error(err));
 });
 
 logoutBtn.addEventListener('click', () => signOut(auth));
 
-// MULTI-ADMIN DOĞRULAMA FİLTRESİ
 onAuthStateChanged(auth, async (user) => {
     if (user) {
-        let isAdmin = (user.email === ROOT_ADMIN);
-        
-        if (!isAdmin) {
-            // Firestore 'admins' tablosunda var mı taraması yap
-            try {
-                const querySnap = await getDocs(collection(db, "admins"));
-                querySnap.forEach(d => {
-                    if (d.data().email === user.email) isAdmin = true;
-                });
-            } catch (err) { console.error("Admin yetki sorgu hatası:", err); }
-        }
-
-        if (isAdmin) {
+        if (user.email === ADMIN_EMAIL) {
             loginSection.style.display = 'none';
             dashboardSection.style.display = 'block';
-            logoutBtn.style.display = 'inline-block';
-            authStatusIndicator.style.background = '#00ff87';
-            authStatusIndicator.style.boxShadow = '0 0 8px #00ff87';
-            authStatusText.innerText = "Yönetici Yetkili";
-            
-            await initDashboardProcedures();
+            await loadDashboardProcedures();
         } else {
-            loginError.innerText = `Erişim Reddedildi! ${user.email} yetkilendirilmiş admin listesinde bulunmuyor.`;
+            loginError.innerText = `Yetkisiz Giriş! ${user.email} sistemde tanımlı değil.`;
             loginError.style.display = 'block';
-            authStatusIndicator.style.background = '#ff5f56';
-            authStatusText.innerText = "Kilitli/Yasaklı";
-            await signOut(auth);
+            signOut(auth);
         }
     } else {
         loginSection.style.display = 'block';
         dashboardSection.style.display = 'none';
-        logoutBtn.style.display = 'none';
-        authStatusIndicator.style.background = '#ff5f56';
-        authStatusIndicator.style.boxShadow = '0 0 6px #ff5f56';
-        authStatusText.innerText = "Giriş Gerekli";
+        applicationsList.innerHTML = '';
     }
-    
-    // Loader Gizleme
-    setTimeout(() => {
-        loader.style.opacity = '0';
-        setTimeout(() => loader.style.display = 'none', 300);
-    }, 500);
+    loader.style.opacity = '0'; setTimeout(() => loader.style.display = 'none', 300);
 });
 
-// TAB PANEL ANAHTARLAMA SİSTEMİ
-function switchTab(activeBtn, activeView) {
-    [tabAppsBtn, tabCreateTBtn, tabAdminsBtn].forEach(b => b.classList.remove('active'));
-    [viewApps, viewCreateT, viewAdmins].forEach(v => v.style.display = 'none');
-    activeBtn.classList.add('active');
-    activeView.style.display = 'block';
-}
-tabAppsBtn.addEventListener('click', () => switchTab(tabAppsBtn, viewApps));
-tabCreateTBtn.addEventListener('click', () => switchTab(tabCreateTBtn, viewCreateT));
-tabAdminsBtn.addEventListener('click', () => switchTab(tabAdminsBtn, viewAdmins));
-
-// DASHBOARD ÇALIŞTIRMA PROSEDÜRLERİ
-async function initDashboardProcedures() {
-    await loadFilterTournaments();
+async function loadDashboardProcedures() {
+    await fetchGlobalDataLocal();
+    await buildFilterDropdown();
     loadApplicationsList();
-    loadAdminsList();
+    loadManageTournamentsList();
 }
 
-// TURNUVA FİLTRE LİSTESİ OLUŞTURMA
-async function loadFilterTournaments() {
+async function fetchGlobalDataLocal() {
+    // Tüm başvuruları local hafızaya al
+    const appSnap = await getDocs(collection(db, "applications"));
+    allApplicationsList = [];
+    appSnap.forEach(d => allApplicationsList.push({ id: d.id, ...d.data() }));
+
+    // Tüm turnuvaları hafızaya al
+    const tourSnap = await getDocs(collection(db, "tournaments"));
+    tournamentsDataList = [];
+    tourSnap.forEach(d => tournamentsDataList.push({ id: d.id, ...d.data() }));
+}
+
+async function buildFilterDropdown() {
     const selector = document.getElementById('filterTournamentSelect');
     selector.innerHTML = '<option value="all">Tüm Turnuvaların Başvuruları</option>';
-    
-    tournamentsDataList = [];
-    const querySnap = await getDocs(collection(db, "tournaments"));
-    querySnap.forEach(d => {
-        tournamentsDataList.push({ id: d.id, ...d.data() });
-        selector.innerHTML += `<option value="${d.id}">${d.data().name}</option>`;
+    tournamentsDataList.forEach(t => {
+        selector.innerHTML += `<option value="${t.id}">${t.name}</option>`;
     });
-
     selector.removeEventListener('change', loadApplicationsList);
     selector.addEventListener('change', loadApplicationsList);
 }
 
-// 1X1 KARE RESİM BOYUT DOĞRULAYICI
 function validateSquareImage(file) {
     return new Promise(r => {
         const reader = new FileReader();
@@ -149,172 +114,215 @@ function validateSquareImage(file) {
     });
 }
 
-// YENİ TURNUVA OLUŞTURMA FORM GÖNDERİMİ
+// YENİ TURNUVA OLUŞTURMA
 document.getElementById('createTournamentForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const btn = document.getElementById('createTBtn');
     const name = document.getElementById('newTName').value.trim();
     const deadline = document.getElementById('newTDeadline').value;
+    const teamSize = document.getElementById('newTSize').value;
+    const maxTeams = document.getElementById('newTMaxTeams').value;
     const rules = document.getElementById('newTRules').value.trim();
     const logoFile = document.getElementById('newTLogo').files[0];
 
-    btn.disabled = true;
-    btn.innerText = "Boyut Kontrolü Yapılıyor...";
-
-    if (logoFile) {
-        const isSquare = await validateSquareImage(logoFile);
-        if (!isSquare) {
-            alert("Uyarılardan Kaçamazsınız! Yüklemeye çalıştığınız turnuva logosu 1x1 (kare) formatında değil.");
-            btn.disabled = false; btn.innerText = "Turnuvayı Akışta Canlıya Al";
-            return;
-        }
+    btn.disabled = true; btn.innerText = "Görsel İnceleniyor...";
+    if (logoFile && !(await validateSquareImage(logoFile))) {
+        alert("Hata: Turnuva logosu kare (1x1) boyutta olmalıdır!");
+        btn.disabled = false; btn.innerText = "Turnuvayı Canlıya Al";
+        return;
     }
 
     try {
-        btn.innerText = "Görsel Dağıtıcıya Yükleniyor...";
+        btn.innerText = "Logo Yükleniyor...";
         const fd = new FormData(); fd.append("image", logoFile);
         const res = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, { method: "POST", body: fd });
-        const data = await res.json();
+        const imgJson = await res.json();
 
         await addDoc(collection(db, "tournaments"), {
-            name: name, deadline: deadline, rules: rules, logoUrl: data.data.url, createdAt: new Date()
+            name: name,
+            deadline: deadline,
+            teamSize: parseInt(teamSize),
+            maxTeams: parseInt(maxTeams),
+            rules: rules,
+            logoUrl: imgJson.data.url,
+            createdAt: new Date()
         });
 
-        alert("Başarılı! Yeni turnuva oluşturuldu ve ana sayfada listelendi.");
+        alert("Yeni esnek espor turnuvası başarıyla yayına alındı!");
         document.getElementById('createTournamentForm').reset();
-        await initDashboardProcedures();
+        await loadDashboardProcedures();
         tabAppsBtn.click();
     } catch (err) {
-        alert("Turnuva kaydı sırasında sunucu hatası.");
+        alert("Sistemsel bir hata oluştu.");
     } finally {
-        btn.disabled = false; btn.innerText = "Turnuvayı Akışta Canlıya Al";
+        btn.disabled = false; btn.innerText = "Turnuvayı Canlıya Al";
     }
 });
 
-// BAŞVURULARI LİSTELEME PROSEDÜRÜ (AKORDEON DÜZENİ)
-async function loadApplicationsList() {
-    const listArea = document.getElementById('applicationsList');
-    const selectedFilter = document.getElementById('filterTournamentSelect').value;
-    listArea.innerHTML = '<p style="color:#8e95a5; text-align:center; padding:15px;">Kayıtlar taranıyor...</p>';
+// GÜNCELLEME LİSTESİNİ OLUŞTURMA (DÜZENLE BUTONLARIYLA BİRLİKTE)
+function loadManageTournamentsList() {
+    const container = document.getElementById('manageTournamentsList');
+    container.innerHTML = '';
 
-    try {
-        const querySnap = await getDocs(collection(db, "applications"));
-        listArea.innerHTML = '';
-        let matchedCount = 0;
+    if (tournamentsDataList.length === 0) {
+        container.innerHTML = '<p style="color:#6f7685; font-size:13px;">Kayıtlı turnuva bulunmuyor.</p>';
+        return;
+    }
 
-        querySnap.forEach(dSnapshot => {
-            const data = dSnapshot.data();
-            if (data.status !== 'bekliyor') return;
-            if (selectedFilter !== 'all' && data.tournamentId !== selectedFilter) return;
+    tournamentsDataList.forEach(t => {
+        const approvedCount = allApplicationsList.filter(a => a.tournamentId === t.id && a.status === 'onaylandi').length;
+        const maxTeams = t.maxTeams || 16;
 
-            matchedCount++;
-            const tInfo = tournamentsDataList.find(x => x.id === data.tournamentId) || { name: 'Bilinmeyen Turnuva' };
+        const row = document.createElement('div');
+        row.style = "background:#14161d; border:1px solid #1f242e; border-radius:8px; padding:12px 18px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; text-align:left;";
+        row.innerHTML = `
+            <div>
+                <strong style="color:#fff; font-size:14px;">🛡️ ${t.name}</strong>
+                <span style="color:#8e95a5; font-size:12px; margin-left:15px;">(Onaylı Kota: ${approvedCount} / ${maxTeams})</span>
+            </div>
+            <button class="btn-secondary open-edit-trigger" style="padding:6px 15px; font-size:12px; border-color:#f39c12; color:#f39c12; font-weight:bold;">Düzenle</button>
+        `;
 
-            const container = document.createElement('div');
-            container.className = 'accordion-item';
-            container.innerHTML = `
-                <div class="accordion-header">
-                    <span style="font-weight:700; color:#fff;">🛡️ [${tInfo.name}] Takım: ${data.teamName}</span>
-                    <span class="arrow-icon" style="color:#8e95a5; font-size:12px; font-weight:bold;">[ DETAYI GÖSTER ▼ ]</span>
-                </div>
-                <div class="accordion-content">
-                    <div style="display:flex; flex-wrap:wrap; gap:20px; margin-bottom:20px; text-align:left;">
-                        <img src="${data.logoUrl}" style="width:100px; height:100px; border-radius:8px; border:2px solid #222; background:#000;">
-                        <div style="flex:1; min-width:250px;">
-                            <p style="font-size:11px; color:#8e95a5; margin-bottom:8px; border-bottom:1px solid rgba(255,255,255,0.05);">KADRO DETAYLARI</p>
-                            <div style="font-size:13px; line-height:1.6;">
-                                🟢 <strong>Kaptan:</strong> ${data.players[0].name} | ${data.players[0].email} | <a href="${data.players[0].yt}" target="_blank" style="color:#60efff;">Sosyal Medya ↗</a><br>
-                                ⚪ <strong>Oyuncu 2:</strong> ${data.players[1].name} | ${data.players[1].email} | <a href="${data.players[1].yt}" target="_blank" style="color:#60efff;">Sosyal Medya ↗</a><br>
-                                ⚪ <strong>Oyuncu 3:</strong> ${data.players[2].name} | ${data.players[2].email} | <a href="${data.players[2].yt}" target="_blank" style="color:#60efff;">Sosyal Medya ↗</a>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="action-buttons-container" style="display:flex; gap:10px;">
-                        <button class="btn-approve-action" style="flex:1; padding:10px; background:#00ff87; color:#000; border:none;">🟢 ONYALA</button>
-                        <button class="btn-reject-action" style="flex:1; padding:10px; background:rgba(255,95,86,0.1); color:#ff5f56; border:1px solid #ff5f56;">🔴 REDDET</button>
-                    </div>
-                </div>
-            `;
+        row.querySelector('.open-edit-trigger').addEventListener('click', () => {
+            editingTournamentId = t.id;
+            document.getElementById('editTName').value = t.name;
+            document.getElementById('editTMaxTeams').value = maxTeams;
+            document.getElementById('editTRules').value = t.rules;
+            document.getElementById('editTSizeDisabled').value = `${t.teamSize} Kişilik Roster`;
+            document.getElementById('editTIdDisabled').value = t.id;
 
-            const header = container.querySelector('.accordion-header');
-            const content = container.querySelector('.accordion-content');
-            header.addEventListener('click', () => {
-                const open = content.style.display === 'block';
-                content.style.display = open ? 'none' : 'block';
-                header.querySelector('.arrow-icon').innerText = open ? '[ DETAYI GÖSTER ▼ ]' : '[ DETAYI GİZLE ▲ ]';
-            });
-
-            container.querySelector('.btn-approve-action').addEventListener('click', () => executeAction(dSnapshot.id, 'onayla', data.players[0].email, data.teamName, content));
-            container.querySelector('.btn-reject-action').addEventListener('click', () => executeAction(dSnapshot.id, 'reddet', data.players[0].email, data.teamName, content));
-
-            listArea.appendChild(container);
+            const editSec = document.getElementById('editTournamentSection');
+            editSec.style.display = 'block';
+            editSec.scrollIntoView({ behavior: 'smooth' });
         });
 
-        if (matchedCount === 0) listArea.innerHTML = '<p style="color:#6f7685; text-align:center; padding:20px; font-size:13px;">Bekleyen takım başvurusu bulunmuyor.</p>';
-    } catch (e) { console.error(e); }
+        container.appendChild(row);
+    });
 }
 
-// EMAILJS VE FIRESTORE AKSİYON ÇALIŞTIRICISI
-async function executeAction(docId, action, captainEmail, teamName, contentArea) {
-    const isApp = action === 'onayla';
-    const btnContainer = contentArea.querySelector('.action-buttons-container');
-    const backup = btnContainer.innerHTML;
-    btnContainer.innerHTML = '<p style="color:#f39c12; width:100%; text-align:center; font-size:13px; font-weight:bold;">⚙️ Protokol yürütülüyor, e-posta kuyruğa gönderiliyor...</p>';
+// TURNUVA DETAYLARINI GÜNCELLEME (KAYITLARI KORUYAN MÜHENDİSLİK)
+document.getElementById('editTournamentForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!editingTournamentId) return;
+
+    const btn = document.getElementById('saveEditTBtn');
+    const name = document.getElementById('editTName').value.trim();
+    const maxTeams = document.getElementById('editTMaxTeams').value;
+    const rules = document.getElementById('editTRules').value.trim();
+
+    btn.disabled = true; btn.innerText = "Güvenli Değişiklikler İşleniyor...";
 
     try {
-        await setDoc(doc(db, "applications", docId), { status: isApp ? "onaylandi" : "reddedildi" }, { merge: true });
+        // updateDoc sadece bu 3 alanı günceller, applications koleksiyonuna asla dokunmaz!
+        const docRef = doc(db, "tournaments", editingTournamentId);
+        await updateDoc(docRef, {
+            name: name,
+            maxTeams: parseInt(maxTeams),
+            rules: rules
+        });
 
-        try {
-            await emailjs.send('service_bftdxcy', isApp ? 'template_01nnh1s' : 'template_cpy48jt', {
-                email: String(captainEmail).trim(),
-                to_email: String(captainEmail).trim(),
-                team_name: String(teamName).trim()
-            });
-            alert("İşlem Başarılı! Veritabanı güncellendi ve şık bildirim postası iletildi.");
-        } catch (mailErr) {
-            alert("Sistem Uyarısı: Durum güncellendi fakat EmailJS e-posta gönderemedi. Lütfen kotanızı kontrol edin.");
-        }
-        loadApplicationsList();
+        alert("Turnuva güncellendi! Katılan esporcuların kayıtları güvenle korundu.");
+        document.getElementById('editTournamentSection').style.display = 'none';
+        editingTournamentId = null;
+        await loadDashboardProcedures();
     } catch (err) {
-        alert("Kritik veritabanı bağlantı hatası.");
-        btnContainer.innerHTML = backup;
+        alert("Güncelleme sırasında bir veritabanı hatası oluştu.");
+    } finally {
+        btn.disabled = false; btn.innerText = "Değişiklikleri Veritabanına Kaydet";
+    }
+});
+
+document.getElementById('cancelEditTBtn').addEventListener('click', () => {
+    document.getElementById('editTournamentSection').style.display = 'none'; editingTournamentId = null;
+});
+
+// BAŞVURULARI LİSTELEME VE ACCORDION YAPISI
+function loadApplicationsList() {
+    const selectedFilter = document.getElementById('filterTournamentSelect').value;
+    applicationsList.innerHTML = '<p style="color:#8e95a5; font-size:13px;">Yükleniyor...</p>';
+    
+    applicationsList.innerHTML = '';
+    let counter = 0;
+
+    allApplicationsList.forEach((data) => {
+        if (data.status !== "bekliyor") return;
+        if (selectedFilter !== 'all' && data.tournamentId !== selectedFilter) return;
+
+        counter++;
+        const tInfo = tournamentsDataList.find(x => x.id === data.tournamentId) || { name: 'Bilinmeyen Turnuva' };
+
+        // Dinamik oyuncu HTML oluşturma döngüsü
+        let playersHtml = '';
+        data.players.forEach((p, idx) => {
+            const isCap = idx === 0;
+            playersHtml += `<p style="margin-bottom:6px; font-size:13px;"><b>Oyuncu ${idx+1}${isCap ? ' (Kaptan)':''}:</b> ${p.name} | ${p.email} | <a href="${p.yt}" target="_blank" style="color:#60efff; text-decoration:none;">Medya ↗</a></p>`;
+        });
+
+        const card = document.createElement('div');
+        card.className = 'accordion-item';
+        card.innerHTML = `
+            <div class="accordion-header">
+                <span style="font-weight:700; color:#fff; font-size:14px;">🛡️ [${tInfo.name}] Takım: ${data.teamName}</span>
+                <span class="arrow-indicator" style="color:#8e95a5; font-size:12px;">[ DETAYLARI GÖSTER ▼ ]</span>
+            </div>
+            <div class="accordion-content">
+                <div style="display:flex; flex-wrap:wrap; gap:20px; margin-bottom:20px;">
+                    <img src="${data.logoUrl}" alt="Logo" style="width:90px; height:90px; border-radius:8px; border:2px solid #252932; object-fit:cover; background:#000;">
+                    <div style="flex:1; min-width:240px;">
+                        <p style="font-size:11px; color:#8e95a5; margin-bottom:6px; border-bottom:1px solid rgba(255,255,255,0.05); font-weight:bold; letter-spacing:0.5px;">DİNAMİK KADRO BAŞVURU DETAYI</p>
+                        ${playersHtml}
+                    </div>
+                </div>
+                <div style="display: flex; gap:10px;">
+                    <button class="btn-approve" style="flex:1; padding:10px; background:#00ff87; color:#0a0b0d; border:none; border-radius:6px; font-weight:bold; cursor:pointer;">Kabul Et</button>
+                    <button class="btn-reject" style="flex:1; padding:10px; background:rgba(255,95,86,0.1); color:#ff5f56; border:1px solid #ff5f56; border-radius:6px; font-weight:bold; cursor:pointer;">Reddet</button>
+                </div>
+            </div>
+        `;
+
+        // Açılır kapanır accordion mekanizması
+        const header = card.querySelector('.accordion-header');
+        const content = card.querySelector('.accordion-content');
+        header.addEventListener('click', () => {
+            const isVisible = content.style.display === 'block';
+            content.style.display = isVisible ? 'none' : 'block';
+            header.querySelector('.arrow-indicator').innerText = isVisible ? '[ DETAYLARI GÖSTER ▼ ]' : '[ DETAYLARI GİZLE ▲ ]';
+        });
+
+        // Buton Dinleyicilerini Bağlama (Modül Hatası Vermemesi İçin En Sağlıklı Yoldur)
+        card.querySelector('.btn-approve').addEventListener('click', () => handleAction(data.id, 'onayla', data.players[0].email, data.teamName));
+        card.querySelector('.btn-reject').addEventListener('click', () => handleAction(data.id, 'reddet', data.players[0].email, data.teamName));
+
+        applicationsList.appendChild(card);
+    });
+
+    if (counter === 0) {
+        applicationsList.innerHTML = '<p style="color:#6f7685; font-size:13px; text-align:center; padding:15px;">Bekleyen takım başvurusu bulunmuyor.</p>';
     }
 }
 
-// ADMİN EKLEME VE LİSTELEME İŞLEMLERİ
-document.getElementById('addAdminBtn').addEventListener('click', async () => {
-    const mail = document.getElementById('newAdminEmail').value.trim().toLowerCase();
-    if (!mail) return;
-    try {
-        await addDoc(collection(db, "admins"), { email: mail, grantedAt: new Date() });
-        alert(`${mail} adresine başarıyla adminlik yetkisi verildi.`);
-        document.getElementById('newAdminEmail').value = '';
-        loadAdminsList();
-    } catch (e) { alert("Yetki verilemedi."); }
-});
+async function handleAction(docId, action, p1Email, teamName) {
+    const isApproved = action === 'onayla';
+    const templateId = isApproved ? 'template_01nnh1s' : 'template_cpy48jt';
+    const serviceId = 'service_bftdxcy';
 
-async function loadAdminsList() {
-    const list = document.getElementById('adminEmailsList');
-    list.innerHTML = '';
     try {
-        // Kök Admini Yazdır
-        list.innerHTML += `<li style="padding:12px 15px; border-bottom:1px solid #1f242e; display:flex; justify-content:between; font-size:13.5px;"><span>👑 ${ROOT_ADMIN} (Root Kurucu)</span></li>`;
-        
-        const querySnap = await getDocs(collection(db, "admins"));
-        querySnap.forEach(d => {
-            const li = document.createElement('li');
-            li.style.padding = '12px 15px'; li.style.borderBottom = '1px solid #1f242e';
-            li.style.display = 'flex'; li.style.justifyContent = 'space-between'; li.style.alignItems = 'center';
-            li.style.fontSize = '13.5px';
-            li.innerHTML = `<span>🛡️ ${d.data().email}</span> <button class="btn-secondary" style="padding:4px 8px; font-size:11px; background:rgba(255,95,86,0.1); color:#ff5f56; border-color:transparent;">Yetki Kaldır</button>`;
-            
-            li.querySelector('button').addEventListener('click', async () => {
-                if(confirm("Bu hesabın yöneticilik yetkisini kaldırmak istediğinize emin misiniz?")) {
-                    await deleteDoc(doc(db, "admins", d.id));
-                    loadAdminsList();
-                }
-            });
-            list.appendChild(li);
+        // E-Posta Protokolünü Çalıştır
+        await emailjs.send(serviceId, templateId, {
+            to_email: p1Email,
+            team_name: teamName
         });
-    } catch (e) { console.error(e); }
+
+        // Veritabanı Onay Durumunu Değiştir
+        const docRef = doc(db, "applications", docId);
+        await updateDoc(docRef, {
+            status: isApproved ? "onaylandi" : "reddedildi"
+        });
+
+        alert(`İşlem başarıyla tamamlandı! Kaptana e-posta iletildi.`);
+        await loadDashboardProcedures();
+    } catch (error) {
+        console.error("Hata:", error);
+        alert("Bir sorun oluştu. E-posta kotası dolmuş veya bağlantı kopmuş olabilir.");
+    }
 }
