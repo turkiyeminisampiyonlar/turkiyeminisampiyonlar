@@ -2,100 +2,162 @@
 <html lang="tr">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#080910">
+  <meta name="description" content="Türkiye Mini Şampiyonlar - Esports Turnuva Kayıt Platformu">
   <title>TMŞ - Türkiye Mini Şampiyonlar</title>
   <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://www.gstatic.com">
+<base target="_blank">
 </head>
 <body>
 
   <!-- LOADER -->
-  <div id="tms-loader" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#0a0b0d;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity 0.4s;">
-    <div style="width:40px;height:40px;border:3px solid rgba(243,156,18,0.1);border-top:3px solid #f39c12;border-radius:50%;animation:spin 0.6s linear infinite;"></div>
-    <div style="color:#f39c12;margin-top:15px;font-weight:800;font-size:11px;letter-spacing:2px;">BAĞLANTI SAĞLANIYOR</div>
+  <div id="tms-loader">
+    <div class="loader-spinner"></div>
+    <div class="loader-text">BAĞLANTI SAĞLANIYOR</div>
   </div>
 
+  <!-- TOAST CONTAINER -->
+  <div class="toast-container" id="toastContainer"></div>
+
   <!-- ÜST NAVİGASYON -->
-  <nav class="top-navbar">
-    <div class="nav-brand">
-      <img src="tmş.png" alt="TMŞ" onerror="this.style.display='none'">
+  <nav class="top-navbar" role="navigation" aria-label="Ana navigasyon">
+    <a href="index.html" class="nav-brand" aria-label="Ana sayfaya git">
+      <img src="tmş.png" alt="TMŞ Logo" onerror="this.style.display='none'" loading="eager">
       <span>TMŞ</span>
-    </div>
+    </a>
     <div class="nav-links">
-      <button class="nav-btn active" id="navHomeBtn">
-        <span class="nav-icon">🏠</span>
+      <button class="nav-btn active" id="navHomeBtn" aria-label="Ana Sayfa" aria-current="page">
+        <span class="nav-icon" aria-hidden="true">🏠</span>
         <span class="nav-label">Ana Sayfa</span>
       </button>
-      <button class="nav-btn" id="navMyAppsBtn">
-        <span class="nav-icon">🎮</span>
+      <button class="nav-btn" id="navMyAppsBtn" aria-label="Katıldıklarım">
+        <span class="nav-icon" aria-hidden="true">🎮</span>
         <span class="nav-label">Katıldıklarım</span>
       </button>
-      <a href="admin.html" class="nav-btn nav-admin">
-        <span class="nav-icon">👑</span>
+      <a href="admin.html" class="nav-btn nav-admin" aria-label="Yönetici Paneli">
+        <span class="nav-icon" aria-hidden="true">👑</span>
         <span class="nav-label">Yönetici</span>
       </a>
     </div>
   </nav>
 
+  <!-- ALT NAVİGASYON (Mobil) -->
+  <nav class="bottom-nav" role="navigation" aria-label="Mobil navigasyon">
+    <button class="nav-btn active" id="bottomNavHome" aria-label="Ana Sayfa">
+      <span class="nav-icon" aria-hidden="true">🏠</span>
+      <span class="nav-label">Ana Sayfa</span>
+    </button>
+    <button class="nav-btn" id="bottomNavMyApps" aria-label="Katıldıklarım">
+      <span class="nav-icon" aria-hidden="true">🎮</span>
+      <span class="nav-label">Katıldıklarım</span>
+    </button>
+    <a href="admin.html" class="nav-btn nav-admin" aria-label="Yönetici Paneli">
+      <span class="nav-icon" aria-hidden="true">👑</span>
+      <span class="nav-label">Yönetici</span>
+    </a>
+  </nav>
+
   <!-- ANA İÇERİK -->
-  <div class="page-wrapper">
+  <main class="page-wrapper">
 
     <!-- HERO BAŞLIK -->
-    <div class="hero-section" id="heroSection">
-      <img src="tmş.png" alt="TMŞ Logo" id="logo" onerror="this.style.display='none'">
+    <section class="hero-section" id="heroSection" aria-label="Site başlığı">
+      <img src="tmş.png" alt="TMŞ Logo" id="logo" onerror="this.style.display='none'" loading="eager">
       <h1>Türkiye Mini Şampiyonlar</h1>
       <p class="subtitle">Henüz keşfedilmemiş yeteneklerin düello meydanı</p>
-    </div>
+    </section>
 
     <!-- TURNUVA HUB -->
-    <div id="tournamentHubView">
+    <section id="tournamentHubView" aria-label="Turnuva listesi">
       <div class="search-bar-wrap">
-        <span style="font-size:16px;">🔍</span>
-        <input type="text" id="searchInput" placeholder="Turnuva ara...">
+        <span class="search-icon" aria-hidden="true">🔍</span>
+        <input type="text" id="searchInput" placeholder="Turnuva ara..." autocomplete="off" aria-label="Turnuva ara">
+        <button class="search-clear" id="searchClear" aria-label="Aramayı temizle">✕</button>
       </div>
-      <div id="tournamentGrid" class="tournament-grid"></div>
-    </div>
 
-    <!-- KATILDIĞLARIMEKRANİ -->
-    <div id="myApplicationsView" style="display:none;">
+      <div class="filter-bar" id="filterBar" aria-label="Filtreler">
+        <button class="filter-chip active" data-filter="all">Tümü</button>
+        <button class="filter-chip" data-filter="active">🟢 Açık</button>
+        <button class="filter-chip" data-filter="expired">🔴 Kapalı</button>
+        <button class="filter-chip" data-filter="full">🟡 Dolu</button>
+      </div>
+
+      <div id="tournamentGrid" class="tournament-grid" role="list" aria-label="Turnuvalar"></div>
+    </section>
+
+    <!-- KATILDIKLARIM -->
+    <section id="myApplicationsView" style="display:none;" aria-label="Katıldığım turnuvalar">
       <div class="section-title">🎮 Katıldığım Turnuvalar</div>
       <div class="search-bar-wrap" style="margin-bottom:20px;">
-        <span style="font-size:16px;">📧</span>
-        <input type="email" id="myEmailInput" placeholder="Kaptan e-posta adresiniz">
+        <span class="search-icon" aria-hidden="true">📧</span>
+        <input type="email" id="myEmailInput" placeholder="Kaptan e-posta adresiniz" autocomplete="email" aria-label="E-posta adresi">
         <button id="searchMyAppsBtn" class="btn-primary" style="padding:10px 18px;white-space:nowrap;font-size:13px;">Sorgula</button>
       </div>
-      <div id="myApplicationsList"></div>
-    </div>
+      <div id="myApplicationsList" role="list" aria-label="Başvurularım"></div>
+    </section>
 
     <!-- KAYIT FORMU -->
-    <div id="registrationFormView" style="display:none;">
-      <button id="backToHubBtn" class="btn-back">◀ Turnuvalara Dön</button>
+    <section id="registrationFormView" style="display:none;" aria-label="Kayıt formu">
+      <button id="backToHubBtn" class="btn-back">
+        <span aria-hidden="true">◀</span> Turnuvalara Dön
+      </button>
+
       <div id="selectedTournamentCard" class="selected-tournament-banner"></div>
+
       <div class="form-section">
         <h2>⚔️ Espor Kayıt Formu</h2>
+
         <div class="input-grid">
           <div class="input-group">
-            <label>Takım / Oyuncu İsmi</label>
-            <input type="text" id="teamName" placeholder="Savaş alanındaki adınız">
+            <label for="teamName">Takım / Oyuncu İsmi <span class="required">*</span></label>
+            <input type="text" id="teamName" placeholder="Savaş alanındaki adınız" autocomplete="off">
+            <p class="hint-text" id="teamNameHint"></p>
           </div>
           <div class="input-group">
-            <label>Takım Logosu (Kare 1x1)</label>
-            <input type="file" id="teamLogo" accept="image/*">
+            <label>Takım Logosu <span class="required">*</span></label>
+            <div class="file-upload-zone" id="fileUploadZone">
+              <div class="upload-icon" aria-hidden="true">📁</div>
+              <div class="upload-text">Logoyu sürükleyin veya tıklayın</div>
+              <div class="upload-hint">Kare (1:1) format, max 5MB</div>
+              <input type="file" id="teamLogo" accept="image/*" aria-label="Takım logosu seç">
+            </div>
+            <img class="image-preview" id="logoPreview" alt="Logo önizleme">
+            <p class="hint-text" id="logoHint">⚠️ Logo tam kare (1:1) boyutta olmalıdır</p>
           </div>
         </div>
-        <p class="hint-text">⚠️ Logo tam kare (1x1) boyutta olmalıdır, sistem denetler.</p>
+
         <div id="dynamicPlayersContainer"></div>
-        <button id="submitBtn" class="btn-submit">⚔️ Savaşa Katıl ve Kaydı Tamamla</button>
+
+        <button id="submitBtn" class="btn-submit">
+          <span aria-hidden="true">⚔️</span> Savaşa Katıl ve Kaydı Tamamla
+        </button>
       </div>
-    </div>
-  </div>
+    </section>
+  </main>
 
   <!-- DURUM MODALİ -->
-  <div id="statusModal" class="modal">
+  <div id="statusModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="statusTitle">
     <div class="modal-content text-center">
+      <button class="modal-close" id="modalCloseBtn" aria-label="Kapat">✕</button>
       <div id="statusIcon"></div>
       <h2 id="statusTitle"></h2>
       <p id="statusMessage"></p>
       <button id="closeStatusBtn" class="btn-secondary" style="margin-top:20px;padding:10px 35px;">Kapat</button>
+    </div>
+  </div>
+
+  <!-- ONAY DİYALOGU -->
+  <div id="confirmModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
+    <div class="modal-content confirm-dialog">
+      <div class="confirm-icon" id="confirmIcon">❓</div>
+      <h3 id="confirmTitle">Emin misiniz?</h3>
+      <p id="confirmMessage">Bu işlem geri alınamaz.</p>
+      <div class="confirm-actions">
+        <button class="btn-secondary" id="confirmCancel">Vazgeç</button>
+        <button class="btn-primary" id="confirmOk">Onayla</button>
+      </div>
     </div>
   </div>
 
