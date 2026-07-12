@@ -1,151 +1,135 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>TMŞ - Gelişmiş Yönetici Merkezi</title>
-<link rel="stylesheet" href="style.css">
-<!-- EmailJS CDN -->
-<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
-<script>
-  // EmailJS global scope'ta başlatılıyor (modül öncesi)
-  window.addEventListener('load', function() {
-    if (typeof emailjs !== 'undefined') {
-      emailjs.init("a7hcviMd81teC1UcX");
-    }
-  });
-</script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>TMŞ - Yönetici Merkezi</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+  <script>
+    window.addEventListener('load', function() {
+      if (typeof emailjs !== 'undefined') emailjs.init("a7hcviMd81teC1UcX");
+    });
+  </script>
 </head>
 <body>
 
-<!-- LOADER -->
-<div id="tms-loader" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#0a0b0d;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity 0.3s;">
-  <div style="width:40px;height:40px;border:3px solid rgba(243,156,18,0.1);border-top:3px solid #f39c12;border-radius:50%;animation:spin 0.6s linear infinite;"></div>
-  <div style="color:#fff;margin-top:15px;font-weight:bold;font-size:12px;letter-spacing:1px;">YÖNETİCİ KANALI DOĞRULANIYOR...</div>
-</div>
-
-<div class="glass-container" style="max-width:950px;">
-  <header>
-    <img src="tmş.png" alt="TMŞ Logo" id="logo" style="max-width:100px;">
-    <h1>Yönetim Paneli</h1>
-    <p class="subtitle">E-Posta Onaylama Modülü & Canlı Turnuva Mühendisliği</p>
-  </header>
-
-  <!-- GİRİŞ ALANI -->
-  <div id="loginSection" class="text-center" style="padding:40px 0;">
-    <p style="color:#8e95a5;margin-bottom:20px;font-size:14px;">Yetkilendirilmiş kurucu Google hesabı ile oturum açınız.</p>
-    <button id="googleLoginBtn" class="btn-primary" style="background:linear-gradient(90deg,#4285F4,#34A853);width:auto;padding:12px 35px;">🌐 Google Admin Girişi</button>
-    <p id="loginError" style="color:#ff5f56;margin-top:15px;font-weight:bold;display:none;background:rgba(255,95,86,0.08);padding:10px;border-radius:8px;font-size:13px;"></p>
+  <!-- LOADER -->
+  <div id="tms-loader" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#080910;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity 0.35s;">
+    <div style="width:40px;height:40px;border:3px solid rgba(243,156,18,0.12);border-top:3px solid #f39c12;border-radius:50%;animation:spin 0.7s linear infinite;"></div>
+    <div style="color:#f39c12;margin-top:14px;font-weight:800;font-size:11px;letter-spacing:2px;">YÖNETİCİ KANALI DOĞRULANIYOR</div>
   </div>
 
-  <!-- PANEL -->
-  <div id="dashboardSection" style="display:none;">
-    <div class="admin-tabs">
-      <button class="admin-tab-btn active" id="tabAppsBtn">Gelen Başvuru Havuzu</button>
-      <button class="admin-tab-btn" id="tabCreateBtn">Turnuva Oluştur & Düzenle</button>
+  <!-- ÜST NAVBAR -->
+  <nav class="top-navbar">
+    <div class="nav-brand">
+      <img src="tmş.png" alt="TMŞ" onerror="this.style.display='none'">
+      <span>TMŞ</span>
+    </div>
+    <div class="nav-links">
+      <a href="index.html" class="nav-btn">
+        <span class="nav-icon">🏠</span>
+        <span class="nav-label">Ana Sayfa</span>
+      </a>
+      <a href="index.html#myapps" class="nav-btn">
+        <span class="nav-icon">🎮</span>
+        <span class="nav-label">Katıldıklarım</span>
+      </a>
+      <span class="nav-btn nav-admin active">
+        <span class="nav-icon">👑</span>
+        <span class="nav-label">Yönetici</span>
+      </span>
+    </div>
+  </nav>
+
+  <div class="glass-container">
+    <header>
+      <img src="tmş.png" alt="TMŞ Logo" id="logo" style="max-width:80px;border-radius:16px;" onerror="this.style.display='none'">
+      <h1>Yönetim Paneli</h1>
+      <p class="subtitle">E-Posta Onaylama Modülü & Canlı Turnuva Mühendisliği</p>
+    </header>
+
+    <!-- GİRİŞ -->
+    <div id="loginSection" style="text-align:center;padding:40px 0;">
+      <p style="color:#6b7280;margin-bottom:20px;font-size:14px;">Yetkilendirilmiş Google hesabıyla oturum açın.</p>
+      <button id="googleLoginBtn" class="btn-primary" style="background:linear-gradient(90deg,#4285F4,#34A853);padding:13px 38px;font-size:15px;border-radius:12px;">
+        🌐 Google ile Giriş Yap
+      </button>
+      <p id="loginError" style="color:#ff5f56;margin-top:16px;font-weight:bold;display:none;background:rgba(255,95,86,0.08);padding:12px;border-radius:10px;font-size:13px;"></p>
     </div>
 
-    <!-- BAŞVURULAR SEKMESİ -->
-    <div id="viewApps">
-      <div class="input-group" style="max-width:100%;margin-bottom:25px;text-align:left;">
-        <label>Turnuvaya Göre Filtrele</label>
-        <select id="filterTournamentSelect" style="cursor:pointer;"></select>
+    <!-- PANO -->
+    <div id="dashboardSection" style="display:none;">
+      <div class="admin-tabs">
+        <button class="admin-tab-btn active" id="tabAppsBtn">📋 Gelen Başvurular</button>
+        <button class="admin-tab-btn" id="tabCreateBtn">🚀 Turnuva Oluştur & Düzenle</button>
       </div>
-      <div id="applicationsList"></div>
-    </div>
 
-    <!-- OLUŞTUR / DÜZENLE SEKMESİ -->
-    <div id="viewCreate" style="display:none;">
+      <!-- BAŞVURULAR -->
+      <div id="viewApps">
+        <div class="input-group" style="max-width:340px;margin-bottom:22px;">
+          <label>Turnuvaya Göre Filtrele</label>
+          <select id="filterTournamentSelect" style="cursor:pointer;"></select>
+        </div>
+        <div id="applicationsList"></div>
+      </div>
 
-      <!-- YENİ TURNUVA FORMU -->
-      <div class="form-section">
-        <h2>Yeni Espor Turnuvası Yayınla</h2>
-        <div id="createTournamentForm">
+      <!-- TURNUVA YÖNETİMİ -->
+      <div id="viewCreate" style="display:none;">
+
+        <div class="form-section">
+          <h2>🚀 Yeni Turnuva Yayınla</h2>
           <div class="input-grid">
-            <div class="input-group">
-              <label>Turnuva İsmi</label>
-              <input type="text" id="newTName" placeholder="Örn: TMŞ Yaz Kupası 2026">
-            </div>
-            <div class="input-group">
-              <label>Son Katılım Tarihi</label>
-              <input type="date" id="newTDeadline">
-            </div>
+            <div class="input-group"><label>Turnuva İsmi</label><input type="text" id="newTName" placeholder="Örn: TMŞ Yaz Kupası 2026"></div>
+            <div class="input-group"><label>Son Katılım Tarihi</label><input type="date" id="newTDeadline"></div>
           </div>
           <div class="input-grid">
             <div class="input-group">
-              <label>Takım Modu (Oyuncu Sayısı)</label>
+              <label>Takım Modu</label>
               <select id="newTSize" style="cursor:pointer;">
-                <option value="1">Tekli Turnuva (1v1 Solo)</option>
-                <option value="2">Grup Turnuvası (2x2 İkili Takım)</option>
-                <option value="3" selected>Klasik Turnuva (3x3 Üçlü Takım)</option>
-                <option value="5">Dev Turnuva (5x5 Beşli Takım)</option>
+                <option value="1">Tekli (1v1 Solo)</option>
+                <option value="2">İkili (2v2)</option>
+                <option value="3" selected>Üçlü (3v3)</option>
+                <option value="5">Beşli (5v5)</option>
               </select>
             </div>
-            <div class="input-group">
-              <label>Maksimum Takım Kontenjanı (Slot)</label>
-              <input type="number" id="newTMaxTeams" value="16" min="1">
-            </div>
+            <div class="input-group"><label>Maksimum Takım Kontenjanı</label><input type="number" id="newTMaxTeams" value="16" min="1"></div>
           </div>
-          <div class="input-group">
-            <label>Turnuva Logosu (Kare 1x1)</label>
-            <input type="file" id="newTLogo" accept="image/*">
-          </div>
-          <div class="input-group">
-            <label>Kurallar, Ödüller ve Açıklama Metni</label>
-            <textarea id="newTRules" rows="4" placeholder="Katılımcıların göreceği kurallar..."></textarea>
-          </div>
-          <button id="createTBtn" class="btn-primary" style="width:100%;">Turnuvayı Akışta Canlıya Al</button>
+          <div class="input-group"><label>Turnuva Logosu (Kare 1x1)</label><input type="file" id="newTLogo" accept="image/*"></div>
+          <div class="input-group"><label>Kurallar, Ödüller ve Açıklama</label><textarea id="newTRules" rows="4" placeholder="Katılımcıların göreceği kurallar..."></textarea></div>
+          <button id="createTBtn" class="btn-primary" style="width:100%;padding:14px;font-size:15px;">Turnuvayı Canlıya Al</button>
         </div>
-      </div>
 
-      <!-- TURNUVA YÖNETİM LİSTESİ -->
-      <div class="form-section" style="margin-top:30px;">
-        <h2>Aktif Turnuva Yönetimi & Düzenleme Paneli</h2>
-        <p style="color:#8e95a5;font-size:12px;margin-bottom:15px;margin-top:-15px;">Aşağıdaki listeden turnuvaları güncelleyebilirsiniz. Kayıtlı oyuncularınızın verileri korunur.</p>
-        <div id="manageTournamentsList"></div>
-      </div>
+        <div class="form-section">
+          <h2>⚙️ Aktif Turnuva Yönetimi</h2>
+          <p style="color:#6b7280;font-size:12px;margin-top:-14px;margin-bottom:16px;">Kayıtlı oyuncuların verileri korunarak güncelleme yapılır.</p>
+          <div id="manageTournamentsList"></div>
+        </div>
 
-      <!-- DÜZENLEME FORMU -->
-      <div id="editTournamentSection" style="display:none;background:rgba(243,156,18,0.02);border:1px dashed #f39c12;padding:25px;border-radius:12px;margin-top:20px;text-align:left;">
-        <h3 style="color:#f39c12;font-size:16px;margin-bottom:15px;font-weight:800;">🛠 Turnuva Detaylarını Güvenli Güncelle</h3>
-        <div id="editTournamentForm">
-          <div class="input-group">
-            <label>Turnuva İsmi (Değiştirilebilir)</label>
-            <input type="text" id="editTName">
-          </div>
-          <div class="input-group">
-            <label>Maksimum Takım Kontenjanı / Slot Sınırı (Değiştirilebilir)</label>
-            <input type="number" id="editTMaxTeams" min="1">
-          </div>
-          <div class="input-group">
-            <label>Turnuva Detayları ve Kuralları (Değiştirilebilir)</label>
-            <textarea id="editTRules" rows="5"></textarea>
-          </div>
+        <div id="editTournamentSection" style="display:none;background:rgba(243,156,18,0.03);border:1px dashed rgba(243,156,18,0.3);padding:24px;border-radius:14px;margin-top:16px;">
+          <h3 style="color:#f39c12;font-size:15px;margin-bottom:16px;font-weight:800;">🛠 Turnuva Güvenli Güncelleme</h3>
+          <div class="input-group"><label>Turnuva İsmi</label><input type="text" id="editTName"></div>
+          <div class="input-group"><label>Maksimum Kontenjan</label><input type="number" id="editTMaxTeams" min="1"></div>
+          <div class="input-group"><label>Kurallar & Açıklama</label><textarea id="editTRules" rows="5"></textarea></div>
           <div class="input-grid" style="opacity:0.4;">
-            <div class="input-group">
-              <label>Her Takımdaki Oyuncu Sayısı (GÜNCELLENEMEZ)</label>
-              <input type="text" id="editTSizeDisabled" disabled style="font-weight:bold;">
-            </div>
-            <div class="input-group">
-              <label>Turnuva Benzersiz ID (GÜNCELLENEMEZ)</label>
-              <input type="text" id="editTIdDisabled" disabled style="font-weight:bold;">
-            </div>
+            <div class="input-group"><label>Takım Büyüklüğü (GÜNCELLENEMEZ)</label><input type="text" id="editTSizeDisabled" disabled></div>
+            <div class="input-group"><label>Turnuva ID (GÜNCELLENEMEZ)</label><input type="text" id="editTIdDisabled" disabled></div>
           </div>
-          <div style="display:flex;gap:10px;margin-top:20px;flex-wrap:wrap;">
-            <button id="saveEditTBtn" class="btn-primary" style="flex:2;min-width:140px;">Değişiklikleri Veritabanına Kaydet</button>
-            <button id="cancelEditTBtn" class="btn-secondary" style="flex:1;min-width:100px;">Vazgeç</button>
+          <div style="display:flex;gap:10px;margin-top:18px;flex-wrap:wrap;">
+            <button id="saveEditTBtn" class="btn-primary" style="flex:2;min-width:130px;padding:13px;">Kaydet</button>
+            <button id="cancelEditTBtn" class="btn-secondary" style="flex:1;min-width:90px;padding:13px;">Vazgeç</button>
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- ÇIKIŞ -->
-    <div style="text-align:right;margin-top:30px;">
-      <button id="logoutBtn" class="btn-secondary" style="background-color:rgba(255,95,86,0.1);border:1px solid #ff5f56;color:#ff5f56;">Güvenli Çıkış Yap</button>
+      <div style="text-align:right;margin-top:28px;">
+        <button id="logoutBtn" class="btn-secondary" style="background:rgba(255,95,86,0.08);border-color:rgba(255,95,86,0.4);color:#ff5f56;padding:10px 22px;">
+          Güvenli Çıkış Yap
+        </button>
+      </div>
     </div>
   </div>
-</div>
 
-<script type="module" src="admin.js"></script>
+  <script type="module" src="admin.js"></script>
 </body>
 </html>
