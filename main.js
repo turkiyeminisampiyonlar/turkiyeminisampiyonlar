@@ -1,6 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
 import {
-  getFirestore, collection, addDoc, getDocs, doc, getDoc
+  getFirestore, collection, addDoc, getDocs, doc, getDoc,
+  onSnapshot, enableIndexedDbPersistence, query, orderBy
 } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -15,34 +16,139 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db  = getFirestore(app);
+
+// Offline önbellek
+enableIndexedDbPersistence(db).catch(() => {});
+
 const IMGBB_API_KEY = "43c8e0a8c3277336886330d1172f988a";
 
-let localTournaments  = [];
-let localApplications = [];
+// ── State ────────────────────────────────────────────────────────
+let localTournaments    = [];
+let localApplications   = [];
 let currentTournamentId = null;
+let currentFilter       = 'all';
+let unsubscribeTournaments = null;
+let unsubscribeApplications = null;
 
+// ── DOM Elements ─────────────────────────────────────────────────
 const loader               = document.getElementById('tms-loader');
-const tournamentHubView    = document.getElementById('tournamentHubView');
+const toastContainer       = document.getElementById('toastContainer');
+const tournamentHubView      = document.getElementById('tournamentHubView');
 const registrationFormView = document.getElementById('registrationFormView');
 const myApplicationsView   = document.getElementById('myApplicationsView');
 const heroSection          = document.getElementById('heroSection');
 const tournamentGrid       = document.getElementById('tournamentGrid');
 const searchInput          = document.getElementById('searchInput');
+const searchClear          = document.getElementById('searchClear');
+const filterBar            = document.getElementById('filterBar');
 const selectedCard         = document.getElementById('selectedTournamentCard');
 const backToHubBtn         = document.getElementById('backToHubBtn');
 const submitBtn            = document.getElementById('submitBtn');
 const statusModal          = document.getElementById('statusModal');
+const confirmModal         = document.getElementById('confirmModal');
 const navHomeBtn           = document.getElementById('navHomeBtn');
 const navMyAppsBtn         = document.getElementById('navMyAppsBtn');
+const bottomNavHome        = document.getElementById('bottomNavHome');
+const bottomNavMyApps      = document.getElementById('bottomNavMyApps');
+const fileUploadZone       = document.getElementById('fileUploadZone');
+const logoPreview          = document.getElementById('logoPreview');
+const teamLogoInput        = document.getElementById('teamLogo');
 
-function showLoader() { loader.style.display = 'flex'; loader.style.opacity = '1'; }
-function hideLoader() { loader.style.opacity = '0'; setTimeout(() => loader.style.display = 'none', 400); }
+// ── Toast System ─────────────────────────────────────────────────
+function showToast(title, message, type = 'info', duration = 4000) {
+  const toast = document.createElement('div');
+  toast.className = `toast ${type}`;
+  toast.setAttribute('role', 'alert');
+  toast.setAttribute('aria-live', 'polite');
 
-// Modal
-document.getElementById('closeStatusBtn').addEventListener('click', () => statusModal.style.display = 'none');
-window.addEventListener('click', e => { if (e.target === statusModal) statusModal.style.display = 'none'; });
+  const icons = { success: '✅', error: '❌', warning: '⚠️', info: 'ℹ️' };
 
-// ── View Yönetimi ────────────────────────────────────────────────────
+  toast.innerHTML = `
+    <span class="toast-icon" aria-hidden="true">${icons[type] || icons.info}</span>
+    <div class="toast-content">
+      <div class="toast-title">${title}</div>
+      <div class="toast-message">${message}</div>
+    </div>
+    <button class="toast-close" aria-label="Bildirimi kapat">✕</button>
+  `;
+
+  toast.querySelector('.toast-close').addEventListener('click', () => removeToast(toast));
+  toastContainer.appendChild(toast);
+
+  if (duration > 0) {
+    setTimeout(() => removeToast(toast), duration);
+  }
+  return toast;
+}
+
+function removeToast(toast) {
+  if (!toast.parentNode) return;
+  toast.classList.add('hiding');
+  setTimeout(() => toast.remove(), 300);
+}
+
+// ── Confirmation Dialog ────────────────────────────────────────
+function showConfirm(title, message, icon = '❓') {
+  return new Promise(resolve => {
+    document.getElementById('confirmTitle').textContent = title;
+    document.getElementById('confirmMessage').textContent = message;
+    document.getElementById('confirmIcon').textContent = icon;
+    confirmModal.classList.add('open');
+
+    const okBtn = document.getElementById('confirmOk');
+    const cancelBtn = document.getElementById('confirmCancel');
+
+    const cleanup = () => {
+      confirmModal.classList.remove('open');
+      okBtn.removeEventListener('click', onOk);
+      cancelBtn.removeEventListener('click', onCancel);
+    };
+
+    const onOk = () => { cleanup(); resolve(true); };
+    const onCancel = () => { cleanup(); resolve(false); };
+
+    okBtn.addEventListener('click', onOk);
+    cancelBtn.addEventListener('click', onCancel);
+
+    // ESC ile kapat
+    const onKey = (e) => {
+      if (e.key === 'Escape') { cleanup(); resolve(false); document.removeEventListener('keydown', onKey); }
+    };
+    document.addEventListener('keydown', onKey);
+  });
+}
+
+// ── Loader ───────────────────────────────────────────────────────
+function showLoader(text = 'BAĞLANTI SAĞLANIYOR') {
+  loader.querySelector('.loader-text').textContent = text;
+  loader.style.display = 'flex';
+  loader.style.opacity = '1';
+}
+
+function hideLoader() {
+  loader.style.opacity = '0';
+  setTimeout(() => { loader.style.display = 'none'; }, 400);
+}
+
+// ── Skeleton Loading ───────────────────────────────────────────
+function showSkeletons(count = 4) {
+  tournamentGrid.innerHTML = '';
+  for (let i = 0; i < count; i++) {
+    const el = document.createElement('div');
+    el.className = 'skeleton-card';
+    el.innerHTML = `
+      <div class="skeleton skeleton-circle"></div>
+      <div class="skeleton skeleton-line short"></div>
+      <div class="skeleton skeleton-line medium"></div>
+      <div class="skeleton skeleton-line long"></div>
+      <div class="skeleton skeleton-line long"></div>
+      <div class="skeleton skeleton-bar"></div>
+    `;
+    tournamentGrid.appendChild(el);
+  }
+}
+
+// ── View Management ──────────────────────────────────────────────
 function showView(view) {
   tournamentHubView.style.display    = 'none';
   registrationFormView.style.display = 'none';
@@ -60,145 +166,323 @@ function showView(view) {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-// ── Navbar ───────────────────────────────────────────────────────────
+// ── Navbar ───────────────────────────────────────────────────────
 function setActiveNav(active) {
-  navHomeBtn.classList.remove('active');
-  navMyAppsBtn.classList.remove('active');
-  if (active === 'home')   navHomeBtn.classList.add('active');
-  if (active === 'myapps') navMyAppsBtn.classList.add('active');
+  [navHomeBtn, navMyAppsBtn, bottomNavHome, bottomNavMyApps].forEach(btn => {
+    btn?.classList.remove('active');
+    btn?.removeAttribute('aria-current');
+  });
+
+  if (active === 'home') {
+    navHomeBtn?.classList.add('active');
+    navHomeBtn?.setAttribute('aria-current', 'page');
+    bottomNavHome?.classList.add('active');
+  }
+  if (active === 'myapps') {
+    navMyAppsBtn?.classList.add('active');
+    navMyAppsBtn?.setAttribute('aria-current', 'page');
+    bottomNavMyApps?.classList.add('active');
+  }
 }
 
-navHomeBtn.addEventListener('click', () => {
-  setActiveNav('home');
-  showView('hub');
-  window.history.pushState({}, '', 'index.html');
-});
-navMyAppsBtn.addEventListener('click', () => {
-  setActiveNav('myapps');
-  showView('myapps');
-});
-
-// ── Veri Çekme ───────────────────────────────────────────────────────
-async function refreshSystemData() {
-  try {
-    const [appSnap, tourSnap] = await Promise.all([
-      getDocs(collection(db, "applications")),
-      getDocs(collection(db, "tournaments"))
-    ]);
-    localApplications = [];
-    appSnap.forEach(d => localApplications.push({ id: d.id, ...d.data() }));
-    localTournaments = [];
-    tourSnap.forEach(d => localTournaments.push({ id: d.id, ...d.data() }));
-  } catch (e) { console.error("Veri hatası:", e); }
-}
-
-// ── Başlangıç ────────────────────────────────────────────────────────
-window.addEventListener('DOMContentLoaded', async () => {
-  await refreshSystemData();
-  const routeId = new URLSearchParams(window.location.search).get('id');
-  if (routeId) {
-    await openRegistrationForm(routeId);
-  } else {
+function setupNav() {
+  const goHome = () => {
     setActiveNav('home');
     showView('hub');
-    renderTournaments(localTournaments);
-  }
-  hideLoader();
-});
+    window.history.pushState({}, '', 'index.html');
+  };
+  const goMyApps = () => {
+    setActiveNav('myapps');
+    showView('myapps');
+  };
 
-// ── Turnuva Kartları ─────────────────────────────────────────────────
+  navHomeBtn?.addEventListener('click', goHome);
+  bottomNavHome?.addEventListener('click', goHome);
+  navMyAppsBtn?.addEventListener('click', goMyApps);
+  bottomNavMyApps?.addEventListener('click', goMyApps);
+}
+
+// ── Real-time Firebase Listeners ─────────────────────────────────
+function setupRealtimeListeners() {
+  // Turnuvaları dinle
+  const tourQuery = query(collection(db, "tournaments"), orderBy("createdAt", "desc"));
+  unsubscribeTournaments = onSnapshot(tourQuery, (snapshot) => {
+    localTournaments = [];
+    snapshot.forEach(d => localTournaments.push({ id: d.id, ...d.data() }));
+    if (tournamentHubView.style.display !== 'none') {
+      renderTournaments(getFilteredTournaments());
+    }
+  }, (err) => {
+    console.warn("Turnuva dinleyici hatası:", err);
+    showToast("Uyarı", "Gerçek zamanlı güncellemeler geçici olarak kullanılamıyor.", "warning", 3000);
+  });
+
+  // Başvuruları dinle
+  const appQuery = query(collection(db, "applications"), orderBy("timestamp", "desc"));
+  unsubscribeApplications = onSnapshot(appQuery, (snapshot) => {
+    localApplications = [];
+    snapshot.forEach(d => localApplications.push({ id: d.id, ...d.data() }));
+    if (tournamentHubView.style.display !== 'none') {
+      renderTournaments(getFilteredTournaments());
+    }
+  }, (err) => {
+    console.warn("Başvuru dinleyici hatası:", err);
+  });
+}
+
+// ── Countdown Timer ────────────────────────────────────────────
+function getCountdown(deadline) {
+  const end = new Date(deadline + 'T23:59:59');
+  const now = new Date();
+  const diff = end - now;
+
+  if (diff <= 0) return { text: 'Süre Doldu', urgent: true, expired: true };
+
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+  const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+
+  if (days > 0) return { text: `⏰ ${days} gün ${hours} saat kaldı`, urgent: days <= 2, expired: false };
+  if (hours > 0) return { text: `⏰ ${hours} saat kaldı`, urgent: true, expired: false };
+  return { text: '⏰ Son saatler!', urgent: true, expired: false };
+}
+
+// ── Tournament Filtering ───────────────────────────────────────
+function getFilteredTournaments() {
+  const searchTerm = searchInput.value.toLowerCase().trim();
+  const today = new Date(); today.setHours(0,0,0,0);
+
+  return localTournaments.filter(t => {
+    // Arama filtresi
+    if (searchTerm && !t.name.toLowerCase().includes(searchTerm)) return false;
+
+    // Durum filtresi
+    const isExpired = new Date(t.deadline) < today;
+    const approvedCount = localApplications.filter(a => a.tournamentId === t.id && a.status === 'onaylandi').length;
+    const maxTeams = parseInt(t.maxTeams) || 16;
+    const isFull = approvedCount >= maxTeams;
+
+    if (currentFilter === 'active' && (isExpired || isFull)) return false;
+    if (currentFilter === 'expired' && !isExpired) return false;
+    if (currentFilter === 'full' && !isFull) return false;
+
+    return true;
+  });
+}
+
+// ── Render Tournaments ─────────────────────────────────────────
 function renderTournaments(list) {
   tournamentGrid.innerHTML = '';
+
   if (list.length === 0) {
-    tournamentGrid.innerHTML = '<p style="color:#6f7685;grid-column:1/-1;text-align:center;padding:40px;">Aktif turnuva bulunamadı.</p>';
+    const emptyMsg = searchInput.value.trim() 
+      ? 'Aramanıza uygun turnuva bulunamadı.'
+      : currentFilter !== 'all' 
+        ? 'Bu filtreye uygun turnuva bulunmuyor.'
+        : 'Aktif turnuva bulunamadı.';
+
+    tournamentGrid.innerHTML = `
+      <div style="grid-column:1/-1;" class="empty-state">
+        <div class="empty-icon" aria-hidden="true">🏆</div>
+        <div class="empty-title">Turnuva Yok</div>
+        ${emptyMsg}
+      </div>`;
     return;
   }
-  list.forEach(t => {
+
+  list.forEach((t, idx) => {
     const today = new Date(); today.setHours(0,0,0,0);
     const isExpired     = new Date(t.deadline) < today;
     const approvedCount = localApplications.filter(a => a.tournamentId === t.id && a.status === 'onaylandi').length;
     const maxTeams      = parseInt(t.maxTeams) || 16;
     const isFull        = approvedCount >= maxTeams;
+    const pct           = Math.min(100, Math.round((approvedCount / maxTeams) * 100));
+    const countdown     = getCountdown(t.deadline);
+    const modeText      = t.teamSize == 1 ? "1v1 Solo" : `${t.teamSize}v${t.teamSize}`;
 
     let badgeClass = 't-badge-active', badgeText = 'Kayıtlar Açık';
     if (isExpired)   { badgeClass = 't-badge-expired'; badgeText = 'Süre Doldu'; }
-    else if (isFull) { badgeClass = 't-badge-expired'; badgeText = 'Kontenjan Doldu'; }
+    else if (isFull) { badgeClass = 't-badge-full'; badgeText = 'Kontenjan Doldu'; }
 
     const disabled = isExpired || isFull;
     const btnText  = isExpired ? 'Süre Doldu' : (isFull ? 'Kontenjan Doldu' : 'Detay ve Kayıt Ol');
-    const pct      = Math.min(100, Math.round((approvedCount / maxTeams) * 100));
 
     const card = document.createElement('div');
     card.className = 'tournament-card';
+    card.style.animationDelay = `${idx * 0.05}s`;
+    card.setAttribute('role', 'listitem');
+    card.setAttribute('tabindex', '0');
+    card.setAttribute('aria-label', `${t.name}, ${badgeText}`);
+
     card.innerHTML = `
       <span class="t-badge ${badgeClass}">${badgeText}</span>
-      <div class="t-logo-container"><img class="t-logo" src="${t.logoUrl || 'tmş.png'}" onerror="this.src='tmş.png'"></div>
+      <div class="t-logo-container">
+        <img class="t-logo" src="${t.logoUrl || 'tmş.png'}" alt="${t.name} logosu" onerror="this.src='tmş.png'" loading="lazy">
+      </div>
       <div class="t-title">${t.name}</div>
-      <div class="t-deadline">📅 Son Başvuru: ${t.deadline}</div>
+      <div class="t-mode">${modeText}</div>
+      <div class="t-deadline">📅 ${t.deadline}</div>
+      ${!isExpired ? `<div class="t-countdown ${countdown.urgent ? 'urgent' : ''}">${countdown.text}</div>` : ''}
       <div class="quota-bar-wrap">
-        <div class="quota-bar-track"><div class="quota-bar-fill" style="width:${pct}%"></div></div>
+        <div class="quota-bar-track" role="progressbar" aria-valuenow="${approvedCount}" aria-valuemax="${maxTeams}" aria-label="Kontenjan durumu">
+          <div class="quota-bar-fill" style="width:${pct}%"></div>
+        </div>
         <span class="quota-label">📊 ${approvedCount} / ${maxTeams} Takım</span>
       </div>
       <div class="t-desc">${t.rules || ''}</div>
-      <button class="btn-primary select-t-btn" style="margin-top:auto;width:100%;" ${disabled ? 'disabled' : ''}>${btnText}</button>
+      <div class="t-actions">
+        <button class="btn-primary select-t-btn" style="flex:1;" ${disabled ? 'disabled' : ''} aria-label="${t.name} turnuvasına kayıt ol">
+          ${btnText}
+        </button>
+        ${!disabled ? `<button class="btn-ghost copy-link-btn" data-id="${t.id}" aria-label="Turnuva linkini kopyala" title="Linki Kopyala">
+          🔗
+        </button>` : ''}
+      </div>
     `;
+
+    // Klavye navigasyonu
+    card.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !disabled) {
+        openRegistrationForm(t.id);
+      }
+    });
+
     if (!disabled) {
       card.querySelector('.select-t-btn').addEventListener('click', () => {
         window.history.pushState({}, '', `?id=${t.id}`);
         openRegistrationForm(t.id);
       });
+
+      const copyBtn = card.querySelector('.copy-link-btn');
+      if (copyBtn) {
+        copyBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const url = `${window.location.origin}${window.location.pathname}?id=${t.id}`;
+          navigator.clipboard.writeText(url).then(() => {
+            showToast("Başarılı", "Turnuva linki panoya kopyalandı!", "success", 2000);
+          }).catch(() => {
+            showToast("Hata", "Link kopyalanamadı.", "error", 2000);
+          });
+        });
+      }
     }
+
     tournamentGrid.appendChild(card);
   });
 }
 
-searchInput.addEventListener('input', e => {
-  const term = e.target.value.toLowerCase().trim();
-  renderTournaments(localTournaments.filter(t => t.name.toLowerCase().includes(term)));
+// ── Search with Debounce ───────────────────────────────────────
+let searchTimeout;
+searchInput.addEventListener('input', () => {
+  searchClear.classList.toggle('visible', searchInput.value.length > 0);
+  clearTimeout(searchTimeout);
+  searchTimeout = setTimeout(() => {
+    renderTournaments(getFilteredTournaments());
+  }, 200);
 });
 
-// ── Kayıt Formu ──────────────────────────────────────────────────────
+searchClear.addEventListener('click', () => {
+  searchInput.value = '';
+  searchClear.classList.remove('visible');
+  renderTournaments(getFilteredTournaments());
+  searchInput.focus();
+});
+
+// ── Filter Chips ───────────────────────────────────────────────
+filterBar.querySelectorAll('.filter-chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    filterBar.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+    chip.classList.add('active');
+    currentFilter = chip.dataset.filter;
+    renderTournaments(getFilteredTournaments());
+  });
+});
+
+// ── Registration Form ──────────────────────────────────────────────
 async function openRegistrationForm(tournamentId) {
   currentTournamentId = tournamentId;
   let t = localTournaments.find(x => x.id === tournamentId);
+
   if (!t) {
     try {
+      showLoader("TURNUVA YÜKLENİYOR");
       const snap = await getDoc(doc(db, "tournaments", tournamentId));
+      hideLoader();
       if (snap.exists()) t = { id: snap.id, ...snap.data() };
-    } catch(e) { console.error(e); }
+    } catch(e) { 
+      hideLoader();
+      console.error(e); 
+    }
   }
-  if (!t) { showPopup("HATA!", "Turnuva bulunamadı.", false); window.history.pushState({}, '', 'index.html'); return; }
+
+  if (!t) {
+    showToast("Hata", "Turnuva bulunamadı.", "error");
+    window.history.pushState({}, '', 'index.html');
+    return;
+  }
 
   const approved  = localApplications.filter(a => a.tournamentId === t.id && a.status === 'onaylandi').length;
   const maxTeams  = parseInt(t.maxTeams) || 16;
   const isFull    = approved >= maxTeams;
-  const modeText  = t.teamSize == 1 ? "Tekli (1v1)" : `${t.teamSize}v${t.teamSize} Takım`;
+  const modeText  = t.teamSize == 1 ? "1v1 Solo" : `${t.teamSize}v${t.teamSize}`;
+  const countdown = getCountdown(t.deadline);
 
   selectedCard.innerHTML = `
-    <img src="${t.logoUrl || 'tmş.png'}" onerror="this.src='tmş.png'"
-      style="width:70px;height:70px;border-radius:12px;object-fit:cover;border:2px solid #f39c12;flex-shrink:0;">
+    <img src="${t.logoUrl || 'tmş.png'}" alt="${t.name}" onerror="this.src='tmş.png'"
+      style="width:68px;height:68px;border-radius:14px;object-fit:cover;border:2px solid var(--accent-gold);flex-shrink:0;display:block;">
     <div style="flex:1;min-width:0;">
-      <div style="font-size:18px;font-weight:800;color:#fff;">${t.name} <span style="color:#f39c12;font-size:13px;font-weight:normal;">[${modeText}]</span></div>
-      <div style="color:#8e95a5;font-size:12px;margin:5px 0;">⏰ Son Katılım: <strong style="color:#f39c12;">${t.deadline}</strong> &nbsp;|&nbsp; 📊 <strong style="color:#00ff87;">${approved}/${maxTeams} Takım Onaylı</strong></div>
-      <div style="color:#b5bdcd;font-size:13px;margin-top:10px;white-space:pre-line;background:rgba(0,0,0,0.2);padding:10px;border-radius:8px;max-height:120px;overflow-y:auto;">${t.rules || ''}</div>
+      <div style="font-size:18px;font-weight:800;color:#fff;line-height:1.3;">
+        ${t.name}
+        <span style="color:var(--accent-gold);font-size:13px;font-weight:700;"> [${modeText}]</span>
+      </div>
+      <div style="color:var(--text-secondary);font-size:13px;margin:8px 0;">
+        ⏰ <strong style="color:var(--accent-gold);">${t.deadline}</strong> &nbsp;|&nbsp;
+        📊 <strong style="color:var(--accent-green);">${approved}/${maxTeams} Onaylı</strong>
+        ${countdown.urgent && !countdown.expired ? `<span style="color:var(--accent-red);margin-left:8px;">⚠️ ${countdown.text}</span>` : ''}
+      </div>
+      <div style="color:var(--text-secondary);font-size:13px;white-space:pre-line;background:rgba(0,0,0,0.25);padding:12px;border-radius:10px;max-height:140px;overflow-y:auto;line-height:1.6;">${t.rules || ''}</div>
     </div>
   `;
 
   submitBtn.disabled  = isFull;
-  submitBtn.innerText = isFull ? "⛔ Kayıtlar Durduruldu (Kontenjan Dolu)" : "⚔️ Savaşa Katıl ve Kaydı Tamamla";
+  submitBtn.innerHTML = isFull 
+    ? '<span aria-hidden="true">⛔</span> Kontenjan Dolu — Kayıtlar Kapalı'
+    : '<span aria-hidden="true">⚔️</span> Savaşa Katıl ve Kaydı Tamamla';
+
+  // Reset form
+  document.getElementById('teamName').value = '';
+  document.getElementById('teamNameHint').textContent = '';
+  document.getElementById('teamNameHint').className = 'hint-text';
+  logoPreview.src = '';
+  logoPreview.classList.remove('visible');
+  document.getElementById('logoHint').textContent = '⚠️ Logo tam kare (1:1) boyutta olmalıdır';
+  document.getElementById('logoHint').className = 'hint-text';
+  teamLogoInput.value = '';
 
   const container = document.getElementById('dynamicPlayersContainer');
   container.innerHTML = '';
   const size = parseInt(t.teamSize) || 3;
+
   for (let i = 1; i <= size; i++) {
     const box = document.createElement('div');
     box.className = 'player-box';
     box.innerHTML = `
-      <h4>${i === 1 ? '🟢 Kaptan / ' : '⚪ '}Oyuncu ${i}</h4>
+      <h4>
+        <span class="player-avatar" aria-hidden="true">${i}</span>
+        ${i === 1 ? 'Kaptan' : `Oyuncu ${i}`}
+      </h4>
       <div class="input-grid">
-        <div class="input-group"><label>Oyun İçi Adı (IGN)</label><input type="text" class="p-name" placeholder="Oyuncu Nick"></div>
-        <div class="input-group"><label>E-Posta</label><input type="email" class="p-email" placeholder="ornek@gmail.com"></div>
-        <div class="input-group"><label>Sosyal Medya Linki</label><input type="url" class="p-yt" placeholder="https://youtube.com/..."></div>
+        <div class="input-group">
+          <label>Oyun İçi Adı (IGN) <span class="required">*</span></label>
+          <input type="text" class="p-name" placeholder="Oyuncu Nick" autocomplete="off" data-player="${i}">
+        </div>
+        <div class="input-group">
+          <label>E-Posta <span class="required">*</span></label>
+          <input type="email" class="p-email" placeholder="ornek@gmail.com" autocomplete="email" data-player="${i}">
+        </div>
+        <div class="input-group">
+          <label>Sosyal Medya Linki <span class="required">*</span></label>
+          <input type="url" class="p-yt" placeholder="https://youtube.com/..." data-player="${i}">
+        </div>
       </div>
     `;
     container.appendChild(box);
@@ -208,17 +492,222 @@ async function openRegistrationForm(tournamentId) {
   showView('form');
 }
 
+// ── Back to Hub ──────────────────────────────────────────────────
 backToHubBtn.addEventListener('click', async () => {
   window.history.pushState({}, '', 'index.html');
   setActiveNav('home');
   showView('hub');
-  showLoader();
-  await refreshSystemData();
-  renderTournaments(localTournaments);
-  hideLoader();
+  showSkeletons(3);
+  renderTournaments(getFilteredTournaments());
 });
 
-// ── Görsel Doğrulama ─────────────────────────────────────────────────
+// ── File Upload with Drag & Drop ────────────────────────────────
+['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+  fileUploadZone.addEventListener(eventName, (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  });
+});
+
+['dragenter', 'dragover'].forEach(eventName => {
+  fileUploadZone.addEventListener(eventName, () => {
+    fileUploadZone.classList.add('dragover');
+  });
+});
+
+['dragleave', 'drop'].forEach(eventName => {
+  fileUploadZone.addEventListener(eventName, () => {
+    fileUploadZone.classList.remove('dragover');
+  });
+});
+
+fileUploadZone.addEventListener('drop', (e) => {
+  const files = e.dataTransfer.files;
+  if (files.length) {
+    teamLogoInput.files = files;
+    handleLogoSelect(files[0]);
+  }
+});
+
+teamLogoInput.addEventListener('change', (e) => {
+  if (e.target.files[0]) handleLogoSelect(e.target.files[0]);
+});
+
+function handleLogoSelect(file) {
+  if (!file.type.startsWith('image/')) {
+    showToast("Hata", "Lütfen geçerli bir görsel dosyası seçin.", "error");
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    logoPreview.src = e.target.result;
+    logoPreview.classList.add('visible');
+
+    const img = new Image();
+    img.onload = () => {
+      const isSquare = img.width === img.height;
+      const hint = document.getElementById('logoHint');
+      if (isSquare) {
+        hint.textContent = '✅ Logo boyutu uygun (' + img.width + 'x' + img.height + ')';
+        hint.className = 'hint-text success';
+      } else {
+        hint.textContent = `⚠️ Logo kare olmalı! (${img.width}x${img.height} değil, ${Math.max(img.width, img.height)}x${Math.max(img.width, img.height)} olmalı)`;
+        hint.className = 'hint-text error';
+      }
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+// ── Form Validation ──────────────────────────────────────────────
+function validateForm() {
+  let isValid = true;
+  const teamName = document.getElementById('teamName');
+  const teamNameHint = document.getElementById('teamNameHint');
+
+  if (!teamName.value.trim()) {
+    teamName.classList.add('error');
+    teamNameHint.textContent = '❌ Takım ismi zorunludur';
+    teamNameHint.className = 'hint-text error';
+    isValid = false;
+  } else {
+    teamName.classList.remove('error');
+    teamName.classList.add('success');
+    teamNameHint.textContent = '✅ Takım ismi geçerli';
+    teamNameHint.className = 'hint-text success';
+  }
+
+  const logoHint = document.getElementById('logoHint');
+  if (!teamLogoInput.files[0]) {
+    logoHint.textContent = '❌ Logo seçimi zorunludur';
+    logoHint.className = 'hint-text error';
+    isValid = false;
+  }
+
+  const pNames  = document.querySelectorAll('.p-name');
+  const pEmails = document.querySelectorAll('.p-email');
+  const pYts    = document.querySelectorAll('.p-yt');
+
+  for (let i = 0; i < pNames.length; i++) {
+    const inputs = [pNames[i], pEmails[i], pYts[i]];
+    const allFilled = inputs.every(inp => inp.value.trim());
+
+    inputs.forEach(inp => {
+      inp.classList.remove('error', 'success');
+      if (!inp.value.trim()) {
+        inp.classList.add('error');
+        isValid = false;
+      } else {
+        inp.classList.add('success');
+      }
+    });
+
+    // Email validation
+    const email = pEmails[i].value.trim();
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      pEmails[i].classList.add('error');
+      pEmails[i].classList.remove('success');
+      isValid = false;
+    }
+  }
+
+  return isValid;
+}
+
+// Real-time validation
+function setupLiveValidation() {
+  document.getElementById('teamName')?.addEventListener('blur', () => {
+    const teamName = document.getElementById('teamName');
+    const hint = document.getElementById('teamNameHint');
+    if (teamName.value.trim()) {
+      teamName.classList.remove('error');
+      teamName.classList.add('success');
+      hint.textContent = '✅ Takım ismi geçerli';
+      hint.className = 'hint-text success';
+    }
+  });
+}
+
+// ── Form Submit ──────────────────────────────────────────────────
+submitBtn.addEventListener('click', async () => {
+  if (!validateForm()) {
+    showToast("Hata", "Lütfen tüm zorunlu alanları doğru şekilde doldurun.", "error");
+    return;
+  }
+
+  const teamName = document.getElementById('teamName').value.trim();
+  const logoFile = teamLogoInput.files[0];
+  const pNames   = document.querySelectorAll('.p-name');
+  const pEmails  = document.querySelectorAll('.p-email');
+  const pYts     = document.querySelectorAll('.p-yt');
+
+  submitBtn.disabled  = true;
+  const originalText = submitBtn.innerHTML;
+  submitBtn.innerHTML = '<span aria-hidden="true">⏳</span> Görsel kontrol ediliyor...';
+
+  try {
+    // Validate square image
+    const isSquare = await validateImageIsSquare(logoFile);
+    if (!isSquare) {
+      showToast("Logo Uyumsuz", "Logo tam kare (1x1) boyutta olmalıdır.", "error");
+      return;
+    }
+
+    submitBtn.innerHTML = '<span aria-hidden="true">☁️</span> Logo yükleniyor...';
+    const fd = new FormData();
+    fd.append("image", logoFile);
+    const res  = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, { method: "POST", body: fd });
+    const json = await res.json();
+    if (!json.success) throw new Error("Logo yüklenemedi.");
+
+    const playersList = [];
+    for (let i = 0; i < pNames.length; i++) {
+      playersList.push({
+        name:  pNames[i].value.trim(),
+        email: pEmails[i].value.trim(),
+        yt:    pYts[i].value.trim()
+      });
+    }
+
+    submitBtn.innerHTML = '<span aria-hidden="true">📝</span> Kaydediliyor...';
+    await addDoc(collection(db, "applications"), {
+      tournamentId: currentTournamentId,
+      teamName, 
+      logoUrl: json.data.url,
+      status: "bekliyor", 
+      players: playersList,
+      timestamp: new Date()
+    });
+
+    showToast("Başarılı", "Başvurunuz alındı! Admin onayından sonra e-posta gönderilecektir.", "success", 6000);
+
+    // Reset form
+    document.getElementById('teamName').value = '';
+    teamLogoInput.value = '';
+    logoPreview.classList.remove('visible');
+    document.querySelectorAll('.p-name, .p-email, .p-yt').forEach(i => {
+      i.value = '';
+      i.classList.remove('error', 'success');
+    });
+    document.getElementById('teamName').classList.remove('error', 'success');
+    document.getElementById('teamNameHint').textContent = '';
+    document.getElementById('teamNameHint').className = 'hint-text';
+    document.getElementById('logoHint').textContent = '⚠️ Logo tam kare (1x1) boyutta olmalıdır';
+    document.getElementById('logoHint').className = 'hint-text';
+
+    backToHubBtn.click();
+
+  } catch (err) {
+    console.error(err);
+    showToast("Hata", "Bir sorun oluştu: " + err.message, "error");
+  } finally {
+    submitBtn.disabled  = false;
+    submitBtn.innerHTML = originalText;
+  }
+});
+
 function validateImageIsSquare(file) {
   return new Promise(r => {
     const reader = new FileReader();
@@ -233,64 +722,15 @@ function validateImageIsSquare(file) {
   });
 }
 
-// ── Form Gönder ──────────────────────────────────────────────────────
-submitBtn.addEventListener('click', async () => {
-  const teamName = document.getElementById('teamName').value.trim();
-  const logoFile = document.getElementById('teamLogo').files[0];
-  const pNames   = document.querySelectorAll('.p-name');
-  const pEmails  = document.querySelectorAll('.p-email');
-  const pYts     = document.querySelectorAll('.p-yt');
-
-  if (!teamName) { showPopup("UYARI!", "Takım ismini giriniz.", false); return; }
-  if (!logoFile) { showPopup("UYARI!", "Takım logosu seçiniz.", false); return; }
-  let allFilled = true;
-  [...pNames, ...pEmails, ...pYts].forEach(i => { if (!i.value.trim()) allFilled = false; });
-  if (!allFilled) { showPopup("UYARI!", "Tüm oyuncu bilgilerini eksiksiz doldurunuz.", false); return; }
-
-  submitBtn.disabled  = true;
-  submitBtn.innerText = "⏳ Görsel Denetleniyor...";
-
-  try {
-    if (!(await validateImageIsSquare(logoFile))) {
-      showPopup("LOGO UYUMSUZ!", "Logo kare (1x1) ölçülerinde olmalıdır!", false);
-      return;
-    }
-    submitBtn.innerText = "☁️ Logo Yükleniyor...";
-    const fd = new FormData(); fd.append("image", logoFile);
-    const res  = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, { method: "POST", body: fd });
-    const json = await res.json();
-    if (!json.success) throw new Error("Logo yükleme başarısız.");
-
-    const playersList = [];
-    for (let i = 0; i < pNames.length; i++) {
-      playersList.push({ name: pNames[i].value.trim(), email: pEmails[i].value.trim(), yt: pYts[i].value.trim() });
-    }
-
-    submitBtn.innerText = "📝 Kayıt Zincirine Yazılıyor...";
-    await addDoc(collection(db, "applications"), {
-      tournamentId: currentTournamentId,
-      teamName, logoUrl: json.data.url, status: "bekliyor", players: playersList, timestamp: new Date()
-    });
-
-    showPopup("✅ BAŞVURU ALINDI!", "Takım kaydınız havuzumuza eklendi. Admin onayından sonra e-posta gönderilecektir.", true);
-    document.getElementById('teamName').value = '';
-    document.getElementById('teamLogo').value = '';
-    document.querySelectorAll('.p-name, .p-email, .p-yt').forEach(i => i.value = '');
-    backToHubBtn.click();
-  } catch (err) {
-    console.error(err);
-    showPopup("TEKNİK HATA!", "Bir hata oluştu: " + err.message, false);
-  } finally {
-    submitBtn.disabled  = false;
-    submitBtn.innerText = "⚔️ Savaşa Katıl ve Kaydı Tamamla";
-  }
-});
-
-// ── Katıldıklarım ────────────────────────────────────────────────────
+// ── My Applications ────────────────────────────────────────────
 document.getElementById('searchMyAppsBtn').addEventListener('click', () => {
   const email  = document.getElementById('myEmailInput').value.trim().toLowerCase();
   const listEl = document.getElementById('myApplicationsList');
-  if (!email) { listEl.innerHTML = '<p style="color:#ff5f56;font-size:13px;">E-posta adresinizi giriniz.</p>'; return; }
+
+  if (!email) {
+    listEl.innerHTML = '<p style="color:var(--accent-red);font-size:13px;padding:8px;">E-posta giriniz.</p>';
+    return;
+  }
 
   const myApps = localApplications.filter(a =>
     a.players?.some(p => (p.email || '').toLowerCase() === email)
@@ -298,33 +738,111 @@ document.getElementById('searchMyAppsBtn').addEventListener('click', () => {
 
   listEl.innerHTML = '';
   if (myApps.length === 0) {
-    listEl.innerHTML = '<div class="empty-state">Bu e-posta ile kayıtlı başvuru bulunamadı.</div>';
+    listEl.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon" aria-hidden="true">📭</div>
+        <div class="empty-title">Başvuru Bulunamadı</div>
+        Bu e-posta ile kayıtlı başvuru bulunamadı.
+      </div>`;
     return;
   }
-  myApps.forEach(a => {
-    const tInfo  = localTournaments.find(t => t.id === a.tournamentId) || { name: 'Bilinmeyen Turnuva' };
-    const sColor = a.status === 'onaylandi' ? '#00ff87' : a.status === 'reddedildi' ? '#ff5f56' : '#f39c12';
+
+  myApps.forEach((a, idx) => {
+    const tInfo  = localTournaments.find(t => t.id === a.tournamentId) || { name: 'Bilinmeyen' };
+    const sColor = a.status === 'onaylandi' ? 'var(--accent-green)' : a.status === 'reddedildi' ? 'var(--accent-red)' : 'var(--accent-gold)';
     const sText  = a.status === 'onaylandi' ? '✅ Onaylandı' : a.status === 'reddedildi' ? '❌ Reddedildi' : '⏳ İnceleniyor';
+    const sBorder = a.status === 'onaylandi' ? 'rgba(0,200,83,0.3)' : a.status === 'reddedildi' ? 'rgba(255,95,86,0.3)' : 'rgba(243,156,18,0.3)';
+
     const el = document.createElement('div');
     el.className = 'my-app-card';
+    el.style.animationDelay = `${idx * 0.05}s`;
     el.innerHTML = `
-      <img src="${a.logoUrl || 'tmş.png'}" onerror="this.src='tmş.png'" class="my-app-logo">
+      <img src="${a.logoUrl || 'tmş.png'}" alt="${a.teamName}" class="my-app-logo" onerror="this.src='tmş.png'" loading="lazy">
       <div class="my-app-info">
         <div class="my-app-name">${a.teamName}</div>
         <div class="my-app-tour">🏆 ${tInfo.name}</div>
       </div>
-      <span class="my-app-status" style="color:${sColor};border-color:${sColor};">${sText}</span>
+      <span class="my-app-status" style="color:${sColor};border-color:${sBorder};">${sText}</span>
     `;
     listEl.appendChild(el);
   });
 });
 
-// ── Popup ────────────────────────────────────────────────────────────
-function showPopup(title, msg, isSuccess) {
-  const color = isSuccess ? '#00ff87' : '#ff5f56';
+// Enter ile sorgula
+document.getElementById('myEmailInput').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') document.getElementById('searchMyAppsBtn').click();
+});
+
+// ── Modal Management ───────────────────────────────────────────
+function showModal(title, message, isSuccess) {
+  const color = isSuccess ? 'var(--accent-green)' : 'var(--accent-red)';
   document.getElementById('statusTitle').innerText   = title;
   document.getElementById('statusTitle').style.color = color;
-  document.getElementById('statusMessage').innerText = msg;
-  document.getElementById('statusIcon').innerHTML    = `<div style="font-size:52px;margin-bottom:10px;">${isSuccess ? '✅' : '❌'}</div>`;
-  statusModal.style.display = 'flex';
+  document.getElementById('statusMessage').innerText = message;
+  document.getElementById('statusIcon').innerHTML    =
+    `<div style="font-size:52px;margin-bottom:16px;" aria-hidden="true">${isSuccess ? '✅' : '❌'}</div>`;
+  statusModal.classList.add('open');
 }
+
+document.getElementById('closeStatusBtn').addEventListener('click', () => {
+  statusModal.classList.remove('open');
+});
+
+document.getElementById('modalCloseBtn').addEventListener('click', () => {
+  statusModal.classList.remove('open');
+});
+
+window.addEventListener('click', e => {
+  if (e.target === statusModal) statusModal.classList.remove('open');
+  if (e.target === confirmModal) confirmModal.classList.remove('open');
+});
+
+// ESC ile kapat
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    statusModal.classList.remove('open');
+    confirmModal.classList.remove('open');
+  }
+});
+
+// ── Initialization ─────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', async () => {
+  setupNav();
+  setupLiveValidation();
+  setupRealtimeListeners();
+
+  const routeId = new URLSearchParams(window.location.search).get('id');
+
+  if (!routeId) {
+    setActiveNav('home');
+    showView('hub');
+    showSkeletons(4);
+  }
+
+  // İlk veri yükleme
+  try {
+    showLoader();
+    await Promise.all([
+      getDocs(collection(db, "tournaments")),
+      getDocs(collection(db, "applications"))
+    ]);
+    hideLoader();
+  } catch (e) {
+    hideLoader();
+    showToast("Uyarı", "Bağlantı yavaş. Önbellekten veriler gösteriliyor.", "warning", 4000);
+  }
+
+  if (routeId) {
+    await openRegistrationForm(routeId);
+    hideLoader();
+  } else {
+    renderTournaments(getFilteredTournaments());
+    hideLoader();
+  }
+});
+
+// Cleanup on page unload
+window.addEventListener('beforeunload', () => {
+  if (unsubscribeTournaments) unsubscribeTournaments();
+  if (unsubscribeApplications) unsubscribeApplications();
+});
