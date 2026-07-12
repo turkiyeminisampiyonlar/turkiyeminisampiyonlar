@@ -2,7 +2,9 @@
 <html lang="tr">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#080910">
+  <meta name="description" content="TMŞ Yönetim Paneli - Espor Turnuva Yönetim Sistemi">
   <title>TMŞ - Yönetici Merkezi</title>
   <link rel="stylesheet" href="style.css">
   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
@@ -11,32 +13,36 @@
       if (typeof emailjs !== 'undefined') emailjs.init("a7hcviMd81teC1UcX");
     });
   </script>
+<base target="_blank">
 </head>
 <body>
 
   <!-- LOADER -->
-  <div id="tms-loader" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#080910;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity 0.35s;">
-    <div style="width:40px;height:40px;border:3px solid rgba(243,156,18,0.12);border-top:3px solid #f39c12;border-radius:50%;animation:spin 0.7s linear infinite;"></div>
-    <div style="color:#f39c12;margin-top:14px;font-weight:800;font-size:11px;letter-spacing:2px;">YÖNETİCİ KANALI DOĞRULANIYOR</div>
+  <div id="tms-loader">
+    <div class="loader-spinner"></div>
+    <div class="loader-text">YÖNETİCİ KANALI DOĞRULANIYOR</div>
   </div>
 
+  <!-- TOAST CONTAINER -->
+  <div class="toast-container" id="toastContainer"></div>
+
   <!-- ÜST NAVBAR -->
-  <nav class="top-navbar">
+  <nav class="top-navbar" role="navigation" aria-label="Yönetici navigasyonu">
     <div class="nav-brand">
-      <img src="tmş.png" alt="TMŞ" onerror="this.style.display='none'">
+      <img src="tmş.png" alt="TMŞ" onerror="this.style.display='none'" loading="eager">
       <span>TMŞ</span>
     </div>
     <div class="nav-links">
-      <a href="index.html" class="nav-btn">
-        <span class="nav-icon">🏠</span>
+      <a href="index.html" class="nav-btn" aria-label="Ana Sayfa">
+        <span class="nav-icon" aria-hidden="true">🏠</span>
         <span class="nav-label">Ana Sayfa</span>
       </a>
-      <a href="index.html#myapps" class="nav-btn">
-        <span class="nav-icon">🎮</span>
+      <a href="index.html#myapps" class="nav-btn" aria-label="Katıldıklarım">
+        <span class="nav-icon" aria-hidden="true">🎮</span>
         <span class="nav-label">Katıldıklarım</span>
       </a>
-      <span class="nav-btn nav-admin active">
-        <span class="nav-icon">👑</span>
+      <span class="nav-btn nav-admin active" aria-label="Yönetici Paneli" aria-current="page">
+        <span class="nav-icon" aria-hidden="true">👑</span>
         <span class="nav-label">Yönetici</span>
       </span>
     </div>
@@ -51,15 +57,36 @@
 
     <!-- GİRİŞ -->
     <div id="loginSection" style="text-align:center;padding:40px 0;">
-      <p style="color:#6b7280;margin-bottom:20px;font-size:14px;">Yetkilendirilmiş Google hesabıyla oturum açın.</p>
-      <button id="googleLoginBtn" class="btn-primary" style="background:linear-gradient(90deg,#4285F4,#34A853);padding:13px 38px;font-size:15px;border-radius:12px;">
-        🌐 Google ile Giriş Yap
+      <p style="color:var(--text-muted);margin-bottom:24px;font-size:15px;">Yetkilendirilmiş Google hesabıyla oturum açın.</p>
+      <button id="googleLoginBtn" class="btn-primary" style="background:linear-gradient(90deg,#4285F4,#34A853);padding:14px 40px;font-size:16px;border-radius:14px;gap:10px;">
+        <span aria-hidden="true">🌐</span> Google ile Giriş Yap
       </button>
-      <p id="loginError" style="color:#ff5f56;margin-top:16px;font-weight:bold;display:none;background:rgba(255,95,86,0.08);padding:12px;border-radius:10px;font-size:13px;"></p>
+      <p id="loginError" style="color:var(--accent-red);margin-top:18px;font-weight:700;display:none;background:rgba(255,95,86,0.08);padding:14px;border-radius:12px;font-size:14px;"></p>
     </div>
 
     <!-- PANO -->
     <div id="dashboardSection" style="display:none;">
+
+      <!-- İSTATİSTİKLER -->
+      <div class="stats-grid" id="statsGrid">
+        <div class="stat-card">
+          <div class="stat-value" id="statTotalTournaments">0</div>
+          <div class="stat-label">Toplam Turnuva</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="statPendingApps">0</div>
+          <div class="stat-label">Bekleyen Başvuru</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="statApprovedApps">0</div>
+          <div class="stat-label">Onaylanan</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="statRejectedApps">0</div>
+          <div class="stat-label">Reddedilen</div>
+        </div>
+      </div>
+
       <div class="admin-tabs">
         <button class="admin-tab-btn active" id="tabAppsBtn">📋 Gelen Başvurular</button>
         <button class="admin-tab-btn" id="tabCreateBtn">🚀 Turnuva Oluştur & Düzenle</button>
@@ -67,10 +94,30 @@
 
       <!-- BAŞVURULAR -->
       <div id="viewApps">
-        <div class="input-group" style="max-width:340px;margin-bottom:22px;">
-          <label>Turnuvaya Göre Filtrele</label>
-          <select id="filterTournamentSelect" style="cursor:pointer;"></select>
+        <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:20px;">
+          <div class="input-group" style="flex:1;min-width:200px;margin-bottom:0;">
+            <label style="margin-bottom:4px;">Turnuvaya Göre Filtrele</label>
+            <select id="filterTournamentSelect" style="cursor:pointer;"></select>
+          </div>
+          <button class="btn-ghost" id="refreshAppsBtn" style="margin-top:18px;" title="Yenile">
+            <span aria-hidden="true">🔄</span> Yenile
+          </button>
         </div>
+
+        <!-- Batch Operations Bar -->
+        <div class="batch-bar" id="batchBar">
+          <span class="batch-count" id="batchCount">0 başvuru seçildi</span>
+          <div class="batch-actions">
+            <button class="btn-success" id="batchApproveBtn">
+              <span aria-hidden="true">✔</span> Onayla
+            </button>
+            <button class="btn-danger" id="batchRejectBtn">
+              <span aria-hidden="true">✕</span> Reddet
+            </button>
+            <button class="btn-ghost" id="batchClearBtn">Temizle</button>
+          </div>
+        </div>
+
         <div id="applicationsList"></div>
       </div>
 
@@ -80,12 +127,18 @@
         <div class="form-section">
           <h2>🚀 Yeni Turnuva Yayınla</h2>
           <div class="input-grid">
-            <div class="input-group"><label>Turnuva İsmi</label><input type="text" id="newTName" placeholder="Örn: TMŞ Yaz Kupası 2026"></div>
-            <div class="input-group"><label>Son Katılım Tarihi</label><input type="date" id="newTDeadline"></div>
+            <div class="input-group">
+              <label>Turnuva İsmi <span class="required">*</span></label>
+              <input type="text" id="newTName" placeholder="Örn: TMŞ Yaz Kupası 2026" autocomplete="off">
+            </div>
+            <div class="input-group">
+              <label>Son Katılım Tarihi <span class="required">*</span></label>
+              <input type="date" id="newTDeadline">
+            </div>
           </div>
           <div class="input-grid">
             <div class="input-group">
-              <label>Takım Modu</label>
+              <label>Takım Modu <span class="required">*</span></label>
               <select id="newTSize" style="cursor:pointer;">
                 <option value="1">Tekli (1v1 Solo)</option>
                 <option value="2">İkili (2v2)</option>
@@ -93,21 +146,39 @@
                 <option value="5">Beşli (5v5)</option>
               </select>
             </div>
-            <div class="input-group"><label>Maksimum Takım Kontenjanı</label><input type="number" id="newTMaxTeams" value="16" min="1"></div>
+            <div class="input-group">
+              <label>Maksimum Takım Kontenjanı <span class="required">*</span></label>
+              <input type="number" id="newTMaxTeams" value="16" min="1" max="128">
+            </div>
           </div>
-          <div class="input-group"><label>Turnuva Logosu (Kare 1x1)</label><input type="file" id="newTLogo" accept="image/*"></div>
-          <div class="input-group"><label>Kurallar, Ödüller ve Açıklama</label><textarea id="newTRules" rows="4" placeholder="Katılımcıların göreceği kurallar..."></textarea></div>
-          <button id="createTBtn" class="btn-primary" style="width:100%;padding:14px;font-size:15px;">Turnuvayı Canlıya Al</button>
+          <div class="input-group">
+            <label>Turnuva Logosu <span class="required">*</span></label>
+            <div class="file-upload-zone" id="adminFileUpload">
+              <div class="upload-icon" aria-hidden="true">📁</div>
+              <div class="upload-text">Logoyu sürükleyin veya tıklayın</div>
+              <div class="upload-hint">Kare (1:1) format, max 5MB</div>
+              <input type="file" id="newTLogo" accept="image/*" aria-label="Turnuva logosu seç">
+            </div>
+            <img class="image-preview" id="adminLogoPreview" alt="Logo önizleme">
+            <p class="hint-text" id="adminLogoHint">⚠️ Logo tam kare (1x1) boyutta olmalıdır</p>
+          </div>
+          <div class="input-group">
+            <label>Kurallar, Ödüller ve Açıklama <span class="required">*</span></label>
+            <textarea id="newTRules" rows="5" placeholder="Katılımcıların göreceği kurallar..."></textarea>
+          </div>
+          <button id="createTBtn" class="btn-primary" style="width:100%;padding:16px;font-size:15px;">
+            <span aria-hidden="true">🚀</span> Turnuvayı Canlıya Al
+          </button>
         </div>
 
         <div class="form-section">
           <h2>⚙️ Aktif Turnuva Yönetimi</h2>
-          <p style="color:#6b7280;font-size:12px;margin-top:-14px;margin-bottom:16px;">Kayıtlı oyuncuların verileri korunarak güncelleme yapılır.</p>
+          <p style="color:var(--text-muted);font-size:13px;margin-top:-16px;margin-bottom:18px;">Kayıtlı oyuncuların verileri korunarak güncelleme yapılır.</p>
           <div id="manageTournamentsList"></div>
         </div>
 
-        <div id="editTournamentSection" style="display:none;background:rgba(243,156,18,0.03);border:1px dashed rgba(243,156,18,0.3);padding:24px;border-radius:14px;margin-top:16px;">
-          <h3 style="color:#f39c12;font-size:15px;margin-bottom:16px;font-weight:800;">🛠 Turnuva Güvenli Güncelleme</h3>
+        <div id="editTournamentSection" style="display:none;background:rgba(243,156,18,0.03);border:1px dashed rgba(243,156,18,0.3);padding:28px;border-radius:16px;margin-top:18px;">
+          <h3 style="color:var(--accent-gold);font-size:17px;margin-bottom:20px;font-weight:800;">🛠 Turnuva Güvenli Güncelleme</h3>
           <div class="input-group"><label>Turnuva İsmi</label><input type="text" id="editTName"></div>
           <div class="input-group"><label>Maksimum Kontenjan</label><input type="number" id="editTMaxTeams" min="1"></div>
           <div class="input-group"><label>Kurallar & Açıklama</label><textarea id="editTRules" rows="5"></textarea></div>
@@ -115,17 +186,32 @@
             <div class="input-group"><label>Takım Büyüklüğü (GÜNCELLENEMEZ)</label><input type="text" id="editTSizeDisabled" disabled></div>
             <div class="input-group"><label>Turnuva ID (GÜNCELLENEMEZ)</label><input type="text" id="editTIdDisabled" disabled></div>
           </div>
-          <div style="display:flex;gap:10px;margin-top:18px;flex-wrap:wrap;">
-            <button id="saveEditTBtn" class="btn-primary" style="flex:2;min-width:130px;padding:13px;">Kaydet</button>
-            <button id="cancelEditTBtn" class="btn-secondary" style="flex:1;min-width:90px;padding:13px;">Vazgeç</button>
+          <div style="display:flex;gap:12px;margin-top:20px;flex-wrap:wrap;">
+            <button id="saveEditTBtn" class="btn-primary" style="flex:2;min-width:130px;padding:14px;">
+              <span aria-hidden="true">💾</span> Kaydet
+            </button>
+            <button id="cancelEditTBtn" class="btn-secondary" style="flex:1;min-width:90px;padding:14px;">Vazgeç</button>
           </div>
         </div>
       </div>
 
-      <div style="text-align:right;margin-top:28px;">
-        <button id="logoutBtn" class="btn-secondary" style="background:rgba(255,95,86,0.08);border-color:rgba(255,95,86,0.4);color:#ff5f56;padding:10px 22px;">
-          Güvenli Çıkış Yap
+      <div style="text-align:right;margin-top:32px;">
+        <button id="logoutBtn" class="btn-secondary" style="background:rgba(255,95,86,0.08);border-color:rgba(255,95,86,0.4);color:var(--accent-red);padding:12px 24px;">
+          <span aria-hidden="true">🚪</span> Güvenli Çıkış Yap
         </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ONAY DİYALOGU -->
+  <div id="confirmModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
+    <div class="modal-content confirm-dialog">
+      <div class="confirm-icon" id="confirmIcon">❓</div>
+      <h3 id="confirmTitle">Emin misiniz?</h3>
+      <p id="confirmMessage">Bu işlem geri alınamaz.</p>
+      <div class="confirm-actions">
+        <button class="btn-secondary" id="confirmCancel">Vazgeç</button>
+        <button class="btn-primary" id="confirmOk">Onayla</button>
       </div>
     </div>
   </div>
