@@ -333,6 +333,9 @@ function renderTournaments(list) {
         <button class="btn-primary select-t-btn" style="flex:1;" ${disabled ? 'disabled' : ''} aria-label="${t.name} turnuvasına kayıt ol">
           ${btnText}
         </button>
+        <button class="btn-ghost detail-btn" data-id="${t.id}" aria-label="Turnuva detaylarını gör" title="Detaylar">
+          👁️
+        </button>
         ${!disabled ? `<button class="btn-ghost copy-link-btn" data-id="${t.id}" aria-label="Turnuva linkini kopyala" title="Linki Kopyala">
           🔗
         </button>` : ''}
@@ -351,6 +354,14 @@ function renderTournaments(list) {
         window.history.pushState({}, '', `?id=${t.id}`);
         openRegistrationForm(t.id);
       });
+
+      const detailBtn = card.querySelector('.detail-btn');
+      if (detailBtn) {
+        detailBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          openTournamentDetail(t.id);
+        });
+      }
 
       const copyBtn = card.querySelector('.copy-link-btn');
       if (copyBtn) {
@@ -632,6 +643,20 @@ function setupLiveValidation() {
 
 // ── Form Submit ──────────────────────────────────────────────────
 submitBtn.addEventListener('click', async () => {
+  // Rate limit kontrolü
+  const rateCheck = checkRateLimit();
+  if (!rateCheck.allowed) {
+    showRateLimitWarning(rateCheck.remainingSeconds);
+    showToast("Uyarı", "Çok fazla başvuru yaptınız. Lütfen bekleyin.", "warning");
+    return;
+  }
+
+  // Honeypot kontrolü
+  if (!checkHoneypot()) {
+    console.warn('Bot detected via honeypot');
+    return;
+  }
+
   if (!validateForm()) {
     showToast("Hata", "Lütfen tüm zorunlu alanları doğru şekilde doldurun.", "error");
     return;
@@ -681,6 +706,7 @@ submitBtn.addEventListener('click', async () => {
       timestamp: new Date()
     });
 
+    setRateLimit();
     showToast("Başarılı", "Başvurunuz alındı! Admin onayından sonra e-posta gönderilecektir.", "success", 6000);
 
     // Reset form
@@ -764,6 +790,8 @@ document.getElementById('searchMyAppsBtn').addEventListener('click', () => {
       </div>
       <span class="my-app-status" style="color:${sColor};border-color:${sBorder};">${sText}</span>
     `;
+    el.style.cursor = 'pointer';
+    el.addEventListener('click', () => openApplicationDetail(a.id));
     listEl.appendChild(el);
   });
 });
@@ -795,7 +823,12 @@ document.getElementById('modalCloseBtn').addEventListener('click', () => {
 window.addEventListener('click', e => {
   if (e.target === statusModal) statusModal.classList.remove('open');
   if (e.target === confirmModal) confirmModal.classList.remove('open');
+  if (e.target === document.getElementById('appDetailModal')) closeApplicationDetail();
+  if (e.target === document.getElementById('tournamentDetailModal')) closeTournamentDetail();
 });
+
+document.getElementById('appDetailCloseBtn')?.addEventListener('click', closeApplicationDetail);
+document.getElementById('tourDetailCloseBtn')?.addEventListener('click', closeTournamentDetail);
 
 // ESC ile kapat
 document.addEventListener('keydown', (e) => {
@@ -804,6 +837,172 @@ document.addEventListener('keydown', (e) => {
     confirmModal.classList.remove('open');
   }
 });
+
+
+// ═══════════════════════════════════════════════════════════════
+// TMŞ v3.0 - Yeni Özellikler ve Güvenlik İyileştirmeleri
+// ═══════════════════════════════════════════════════════════════
+
+// ── Rate Limiting ──────────────────────────────────────────────
+const RATE_LIMIT_MINUTES = 5;
+const RATE_LIMIT_KEY = 'tms_last_application';
+
+function checkRateLimit() {
+  const lastApp = localStorage.getItem(RATE_LIMIT_KEY);
+  if (!lastApp) return { allowed: true };
+
+  const lastTime = parseInt(lastApp);
+  const now = Date.now();
+  const diffMs = now - lastTime;
+  const diffMinutes = diffMs / (1000 * 60);
+
+  if (diffMinutes < RATE_LIMIT_MINUTES) {
+    const remainingSeconds = Math.ceil((RATE_LIMIT_MINUTES * 60 * 1000 - diffMs) / 1000);
+    return { allowed: false, remainingSeconds };
+  }
+  return { allowed: true };
+}
+
+function setRateLimit() {
+  localStorage.setItem(RATE_LIMIT_KEY, Date.now().toString());
+}
+
+function showRateLimitWarning(seconds) {
+  const warning = document.getElementById('rateLimitWarning');
+  const timer = document.getElementById('rateLimitTimer');
+  warning.classList.add('visible');
+
+  let remaining = seconds;
+  timer.textContent = remaining;
+
+  const interval = setInterval(() => {
+    remaining--;
+    timer.textContent = remaining;
+    if (remaining <= 0) {
+      clearInterval(interval);
+      warning.classList.remove('visible');
+    }
+  }, 1000);
+}
+
+// ── Honeypot Check ─────────────────────────────────────────────
+function checkHoneypot() {
+  const honeypot = document.getElementById('website');
+  return !honeypot || !honeypot.value;
+}
+
+// ── Tournament Detail Modal ────────────────────────────────────
+function openTournamentDetail(tournamentId) {
+  const t = localTournaments.find(x => x.id === tournamentId);
+  if (!t) return;
+
+  const approved = localApplications.filter(a => a.tournamentId === t.id && a.status === 'onaylandi').length;
+  const maxTeams = parseInt(t.maxTeams) || 16;
+  const isFull = approved >= maxTeams;
+  const modeText = t.teamSize == 1 ? "1v1 Solo" : `${t.teamSize}v${t.teamSize}`;
+  const countdown = getCountdown(t.deadline);
+
+  const modal = document.getElementById('tournamentDetailModal');
+  const content = document.getElementById('tourDetailContent');
+
+  content.innerHTML = `
+    <div class="app-detail-header">
+      <img src="${t.logoUrl || 'tmş.png'}" alt="${t.name}" class="app-detail-logo" onerror="this.src='tmş.png'">
+      <div>
+        <div class="app-detail-title">${t.name}</div>
+        <div class="app-detail-subtitle">${modeText} | ${t.deadline} | ${approved}/${maxTeams} Takım</div>
+      </div>
+    </div>
+    <div class="app-detail-section">
+      <h4>📋 Kurallar ve Açıklama</h4>
+      <div style="background:rgba(0,0,0,0.25);padding:16px;border-radius:10px;line-height:1.8;color:var(--text-secondary);font-size:14px;white-space:pre-line;">${t.rules || 'Açıklama bulunmuyor.'}</div>
+    </div>
+    <div class="app-detail-section">
+      <h4>⏰ Durum</h4>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;">
+        ${countdown.expired ? '<span class="security-badge warning">🔴 Süre Doldu</span>' : 
+          isFull ? '<span class="security-badge warning">🟡 Kontenjan Doldu</span>' : 
+          '<span class="security-badge verified">🟢 Kayıtlar Açık</span>'}
+        ${countdown.urgent && !countdown.expired ? '<span class="security-badge warning">⚠️ ' + countdown.text + '</span>' : ''}
+      </div>
+    </div>
+    <div style="display:flex;gap:12px;margin-top:24px;">
+      <button class="btn-primary" style="flex:1;" onclick="closeTournamentDetail();openRegistrationForm('${t.id}');" ${isFull || countdown.expired ? 'disabled' : ''}>
+        ${isFull || countdown.expired ? '⛔ Kayıtlar Kapalı' : '⚔️ Kayıt Ol'}
+      </button>
+      <button class="btn-secondary" style="flex:1;" onclick="closeTournamentDetail()">Kapat</button>
+    </div>
+  `;
+
+  modal.classList.add('open');
+}
+
+function closeTournamentDetail() {
+  document.getElementById('tournamentDetailModal').classList.remove('open');
+}
+
+// ── Application Detail Modal (for My Applications) ────────────
+function openApplicationDetail(appId) {
+  const app = localApplications.find(a => a.id === appId);
+  if (!app) return;
+
+  const t = localTournaments.find(x => x.id === app.tournamentId) || { name: 'Bilinmeyen' };
+  const sColor = app.status === 'onaylandi' ? 'var(--accent-green)' : app.status === 'reddedildi' ? 'var(--accent-red)' : 'var(--accent-gold)';
+  const sText = app.status === 'onaylandi' ? '✅ Onaylandı' : app.status === 'reddedildi' ? '❌ Reddedildi' : '⏳ İnceleniyor';
+  const sBg = app.status === 'onaylandi' ? 'rgba(0,200,83,0.12)' : app.status === 'reddedildi' ? 'rgba(255,95,86,0.12)' : 'rgba(243,156,18,0.12)';
+
+  const modal = document.getElementById('appDetailModal');
+  const content = document.getElementById('appDetailContent');
+
+  let playersHtml = '';
+  (app.players || []).forEach((p, idx) => {
+    playersHtml += `
+      <div class="player-detail-row">
+        <div class="player-detail-num">${idx + 1}</div>
+        <div class="player-detail-info">
+          <div class="player-detail-name">${p.name || '-'}</div>
+          <div class="player-detail-email">${p.email || '-'}</div>
+        </div>
+        <a href="${p.yt || '#'}" target="_blank" rel="noopener" class="player-detail-link">Medya ↗</a>
+      </div>
+    `;
+  });
+
+  content.innerHTML = `
+    <div class="app-detail-header">
+      <img src="${app.logoUrl || 'tmş.png'}" alt="${app.teamName}" class="app-detail-logo" onerror="this.src='tmş.png'">
+      <div>
+        <div class="app-detail-title">${app.teamName}</div>
+        <div class="app-detail-subtitle">🏆 ${t.name}</div>
+      </div>
+    </div>
+    <div class="app-detail-section">
+      <h4>📊 Başvuru Durumu</h4>
+      <span class="my-app-status" style="color:${sColor};border-color:${sColor};background:${sBg};">${sText}</span>
+      ${app.rejectionReason ? `<div style="margin-top:12px;padding:12px;background:rgba(255,95,86,0.05);border-radius:8px;border:1px solid rgba(255,95,86,0.2);"><strong style="color:var(--accent-red);">Red Gerekçesi:</strong> <span style="color:var(--text-secondary);font-size:13px;">${app.rejectionReason}</span></div>` : ''}
+    </div>
+    <div class="app-detail-section">
+      <h4>👥 Kadro</h4>
+      ${playersHtml}
+    </div>
+    <div class="app-detail-section">
+      <h4>📅 Başvuru Tarihi</h4>
+      <div style="color:var(--text-secondary);font-size:14px;">
+        ${app.timestamp ? new Date(app.timestamp.toDate ? app.timestamp.toDate() : app.timestamp).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Bilinmiyor'}
+      </div>
+    </div>
+    <button class="btn-secondary" style="width:100%;margin-top:20px;" onclick="closeApplicationDetail()">Kapat</button>
+  `;
+
+  modal.classList.add('open');
+}
+
+function closeApplicationDetail() {
+  document.getElementById('appDetailModal').classList.remove('open');
+}
+
+// ── Enhanced Form Submit with Rate Limit & Honeypot ────────────
+// Override the original submit handler
 
 // ── Initialization ─────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', async () => {
