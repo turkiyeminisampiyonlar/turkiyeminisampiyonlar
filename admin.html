@@ -8,6 +8,7 @@
   <title>TMŞ - Yönetici Merkezi</title>
   <link rel="stylesheet" href="style.css">
   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
   <script>
     window.addEventListener('load', function() {
       if (typeof emailjs !== 'undefined') emailjs.init("a7hcviMd81teC1UcX");
@@ -59,7 +60,10 @@
     <!-- GİRİŞ -->
     <div id="loginSection" style="text-align:center;padding:40px 0;">
       <p style="color:var(--text-muted);margin-bottom:24px;font-size:15px;">Yetkilendirilmiş Google hesabıyla oturum açın.</p>
-      <button id="googleLoginBtn" class="btn-primary" style="background:linear-gradient(90deg,#4285F4,#34A853);padding:14px 40px;font-size:16px;border-radius:14px;gap:10px;">
+      <div style="display:flex;justify-content:center;margin-bottom:20px;">
+        <div class="cf-turnstile" data-sitekey="0x4AAAAAAD1KAf0eTNvM1eqj" data-theme="dark" data-callback="onTurnstileSuccess"></div>
+      </div>
+      <button id="googleLoginBtn" class="btn-primary" style="background:linear-gradient(90deg,#4285F4,#34A853);padding:14px 40px;font-size:16px;border-radius:14px;gap:10px;" disabled>
         <span aria-hidden="true">🌐</span> Google ile Giriş Yap
       </button>
       <p id="loginError" style="color:var(--accent-red);margin-top:18px;font-weight:700;display:none;background:rgba(255,95,86,0.08);padding:14px;border-radius:12px;font-size:14px;"></p>
@@ -161,6 +165,30 @@
           </div>
           <button id="addAdminBtn" class="btn-primary" style="width:100%;padding:14px;margin-top:10px;">
             <span aria-hidden="true">➕</span> Admin Ekle
+          </button>
+        </div>
+
+
+        <div class="form-section" style="border:1px solid rgba(243,156,18,0.2);background:rgba(243,156,18,0.03);">
+          <h2>🔐 PIN Kodunu Değiştir</h2>
+          <p style="color:var(--text-muted);font-size:13px;margin-top:-16px;margin-bottom:18px;">Güvenliğiniz için düzenli olarak PIN değiştirmeniz önerilir.</p>
+          <div class="input-grid">
+            <div class="input-group">
+              <label>Mevcut PIN <span class="required">*</span></label>
+              <input type="password" id="currentPin" placeholder="••••" maxlength="4" inputmode="numeric" pattern="[0-9]*" autocomplete="off">
+            </div>
+            <div class="input-group">
+              <label>Yeni PIN <span class="required">*</span></label>
+              <input type="password" id="newPin" placeholder="••••" maxlength="4" inputmode="numeric" pattern="[0-9]*" autocomplete="off">
+            </div>
+            <div class="input-group">
+              <label>Yeni PIN Tekrar <span class="required">*</span></label>
+              <input type="password" id="confirmNewPin" placeholder="••••" maxlength="4" inputmode="numeric" pattern="[0-9]*" autocomplete="off">
+            </div>
+          </div>
+          <p class="hint-text" id="pinChangeHint">4 haneli sayısal PIN giriniz</p>
+          <button id="changePinBtn" class="btn-primary" style="width:100%;padding:14px;margin-top:10px;">
+            <span aria-hidden="true">🔐</span> PIN Değiştir
           </button>
         </div>
 
