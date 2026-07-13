@@ -58,9 +58,7 @@ function showToast(title, message, type = 'info', duration = 4000) {
   toast.className = `toast ${type}`;
   toast.setAttribute('role', 'alert');
   toast.setAttribute('aria-live', 'polite');
-
   const icons = { success: '✅', error: '❌', warning: '⚠️', info: 'ℹ️' };
-
   toast.innerHTML = `
     <span class="toast-icon" aria-hidden="true">${icons[type] || icons.info}</span>
     <div class="toast-content">
@@ -69,16 +67,11 @@ function showToast(title, message, type = 'info', duration = 4000) {
     </div>
     <button class="toast-close" aria-label="Bildirimi kapat">✕</button>
   `;
-
   toast.querySelector('.toast-close').addEventListener('click', () => removeToast(toast));
   toastContainer.appendChild(toast);
-
-  if (duration > 0) {
-    setTimeout(() => removeToast(toast), duration);
-  }
+  if (duration > 0) setTimeout(() => removeToast(toast), duration);
   return toast;
 }
-
 function removeToast(toast) {
   if (!toast.parentNode) return;
   toast.classList.add('hiding');
@@ -92,22 +85,17 @@ function showConfirm(title, message, icon = '❓') {
     document.getElementById('confirmMessage').textContent = message;
     document.getElementById('confirmIcon').textContent = icon;
     confirmModal.classList.add('open');
-
     const okBtn = document.getElementById('confirmOk');
     const cancelBtn = document.getElementById('confirmCancel');
-
     const cleanup = () => {
       confirmModal.classList.remove('open');
       okBtn.removeEventListener('click', onOk);
       cancelBtn.removeEventListener('click', onCancel);
     };
-
     const onOk = () => { cleanup(); resolve(true); };
     const onCancel = () => { cleanup(); resolve(false); };
-
     okBtn.addEventListener('click', onOk);
     cancelBtn.addEventListener('click', onCancel);
-
     const onKey = (e) => {
       if (e.key === 'Escape') { cleanup(); resolve(false); document.removeEventListener('keydown', onKey); }
     };
@@ -118,7 +106,6 @@ function showConfirm(title, message, icon = '❓') {
 // ── Rejection Reason Dialog ──────────────────────────────────────
 function showRejectionReasonDialog(teamName) {
   return new Promise(resolve => {
-    // Create custom modal for rejection reason
     const modal = document.createElement('div');
     modal.className = 'modal open';
     modal.setAttribute('role', 'dialog');
@@ -147,16 +134,13 @@ function showRejectionReasonDialog(teamName) {
         </div>
       </div>
     `;
-
     document.body.appendChild(modal);
     const input = modal.querySelector('#rejectionReasonInput');
     input.focus();
-
     const cleanup = () => {
       modal.remove();
       document.removeEventListener('keydown', onKey);
     };
-
     const onConfirm = () => {
       const reason = input.value.trim();
       if (!reason) {
@@ -169,24 +153,13 @@ function showRejectionReasonDialog(teamName) {
       cleanup();
       resolve(reason);
     };
-
-    const onCancel = () => {
-      cleanup();
-      resolve(null);
-    };
-
-    const onKey = (e) => {
-      if (e.key === 'Escape') { onCancel(); }
-    };
+    const onCancel = () => { cleanup(); resolve(null); };
+    const onKey = (e) => { if (e.key === 'Escape') { onCancel(); } };
     document.addEventListener('keydown', onKey);
-
     modal.querySelector('#rejConfirmBtn').addEventListener('click', onConfirm);
     modal.querySelector('#rejCancelBtn').addEventListener('click', onCancel);
     modal.querySelector('#rejModalClose').addEventListener('click', onCancel);
-
-    modal.addEventListener('click', (e) => {
-      if (e.target === modal) onCancel();
-    });
+    modal.addEventListener('click', (e) => { if (e.target === modal) onCancel(); });
   });
 }
 
@@ -196,7 +169,6 @@ function showLoader(text) {
   loader.style.display = 'flex';
   loader.style.opacity = '1';
 }
-
 function hideLoader() {
   loader.style.opacity = '0';
   setTimeout(() => { loader.style.display = 'none'; }, 400);
@@ -209,7 +181,6 @@ tabAppsBtn.addEventListener('click', () => {
   viewApps.style.display = 'block';
   viewCreate.style.display = 'none';
 });
-
 tabCreateBtn.addEventListener('click', () => {
   tabCreateBtn.classList.add('active');
   tabAppsBtn.classList.remove('active');
@@ -225,12 +196,8 @@ loginBtn.addEventListener('click', async () => {
     await signInWithPopup(auth, provider);
   } catch (err) {
     if (err.code === 'auth/popup-blocked' || err.code === 'auth/popup-closed-by-user') {
-      try { 
-        await signInWithRedirect(auth, provider); 
-      } catch (e) { 
-        hideLoader(); 
-        showLoginError("Giriş başarısız. Sayfayı yenileyip tekrar deneyin."); 
-      }
+      try { await signInWithRedirect(auth, provider); }
+      catch (e) { hideLoader(); showLoginError("Giriş başarısız. Sayfayı yenileyip tekrar deneyin."); }
     } else if (err.code === 'auth/cancelled-popup-request') {
       hideLoader();
     } else {
@@ -243,7 +210,6 @@ loginBtn.addEventListener('click', async () => {
 logoutBtn.addEventListener('click', async () => {
   const confirmed = await showConfirm("Çıkış Yap", "Yönetim panelinden çıkmak istediğinize emin misiniz?", "🚪");
   if (!confirmed) return;
-
   dashboardLoaded = false;
   selectedAppIds.clear();
   updateBatchBar();
@@ -251,9 +217,8 @@ logoutBtn.addEventListener('click', async () => {
   showToast("Bilgi", "Güvenli çıkış yapıldı.", "info", 3000);
 });
 
-// Redirect dönüşünü yakala
 getRedirectResult(auth).then(result => {
-  // onAuthStateChanged zaten tetiklenecek
+  // onAuthStateChanged handles the rest
 }).catch(err => {
   if (err?.code && err.code !== 'auth/no-current-user') {
     console.warn("Redirect sonucu:", err.code);
@@ -323,7 +288,6 @@ function updateStats() {
   const approved = allApplicationsList.filter(a => a.status === 'onaylandi').length;
   const rejected = allApplicationsList.filter(a => a.status === 'reddedildi').length;
   const totalTournaments = tournamentsDataList.length;
-
   animateNumber('statTotalTournaments', totalTournaments);
   animateNumber('statPendingApps', pending);
   animateNumber('statApprovedApps', approved);
@@ -336,10 +300,8 @@ function animateNumber(id, target) {
   const start = parseInt(el.textContent) || 0;
   const diff = target - start;
   if (diff === 0) return;
-
   const duration = 600;
   const startTime = performance.now();
-
   function update(currentTime) {
     const elapsed = currentTime - startTime;
     const progress = Math.min(elapsed / duration, 1);
@@ -411,22 +373,14 @@ document.getElementById('batchClearBtn').addEventListener('click', () => {
 
 document.getElementById('batchApproveBtn').addEventListener('click', async () => {
   if (selectedAppIds.size === 0) return;
-  const confirmed = await showConfirm(
-    "Toplu Onay", 
-    `${selectedAppIds.size} başvuruyu onaylamak istediğinize emin misiniz?`,
-    "✅"
-  );
+  const confirmed = await showConfirm("Toplu Onay", `${selectedAppIds.size} başvuruyu onaylamak istediğinize emin misiniz?`, "✅");
   if (!confirmed) return;
   await batchAction('onayla');
 });
 
 document.getElementById('batchRejectBtn').addEventListener('click', async () => {
   if (selectedAppIds.size === 0) return;
-  const confirmed = await showConfirm(
-    "Toplu Red", 
-    `${selectedAppIds.size} başvuruyu reddetmek istediğinize emin misiniz?`,
-    "❌"
-  );
+  const confirmed = await showConfirm("Toplu Red", `${selectedAppIds.size} başvuruyu reddetmek istediğinize emin misiniz?`, "❌");
   if (!confirmed) return;
   await batchAction('reddet');
 });
@@ -435,13 +389,11 @@ async function batchAction(action) {
   const isApproved = action === 'onayla';
   const batch = writeBatch(db);
   let processed = 0;
-
   for (const docId of selectedAppIds) {
     const appRef = doc(db, "applications", docId);
     batch.update(appRef, { status: isApproved ? "onaylandi" : "reddedildi" });
     processed++;
   }
-
   try {
     await batch.commit();
     showToast("Başarılı", `${processed} başvuru ${isApproved ? 'onaylandı' : 'reddedildi'}.`, "success");
@@ -483,28 +435,18 @@ const adminLogoHint = document.getElementById('adminLogoHint');
 const newTLogoInput = document.getElementById('newTLogo');
 
 ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-  adminFileUpload.addEventListener(eventName, (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-  });
+  adminFileUpload.addEventListener(eventName, (e) => { e.preventDefault(); e.stopPropagation(); });
 });
-
 ['dragenter', 'dragover'].forEach(eventName => {
   adminFileUpload.addEventListener(eventName, () => adminFileUpload.classList.add('dragover'));
 });
-
 ['dragleave', 'drop'].forEach(eventName => {
   adminFileUpload.addEventListener(eventName, () => adminFileUpload.classList.remove('dragover'));
 });
-
 adminFileUpload.addEventListener('drop', (e) => {
   const files = e.dataTransfer.files;
-  if (files.length) {
-    newTLogoInput.files = files;
-    handleAdminLogoSelect(files[0]);
-  }
+  if (files.length) { newTLogoInput.files = files; handleAdminLogoSelect(files[0]); }
 });
-
 newTLogoInput.addEventListener('change', (e) => {
   if (e.target.files[0]) handleAdminLogoSelect(e.target.files[0]);
 });
@@ -514,12 +456,10 @@ function handleAdminLogoSelect(file) {
     showToast("Hata", "Lütfen geçerli bir görsel dosyası seçin.", "error");
     return;
   }
-
   const reader = new FileReader();
   reader.onload = (e) => {
     adminLogoPreview.src = e.target.result;
     adminLogoPreview.classList.add('visible');
-
     const img = new Image();
     img.onload = () => {
       const isSquare = img.width === img.height;
@@ -550,29 +490,22 @@ document.getElementById('createTBtn').addEventListener('click', async () => {
     showToast("Hata", "Lütfen tüm alanları doldurunuz ve logo seçiniz.", "error");
     return;
   }
-
   btn.disabled = true;
   const originalText = btn.innerHTML;
   btn.innerHTML = '<span aria-hidden="true">📐</span> Görsel İnceleniyor...';
-
   try {
     if (!(await validateSquareImage(logoFile))) {
       showToast("Hata", "Logo kare (1x1) boyutta olmalıdır!", "error");
       return;
     }
-
     btn.innerHTML = '<span aria-hidden="true">☁️</span> Logo Yükleniyor...';
     const logoUrl = await uploadLogo(logoFile);
-
     btn.innerHTML = '<span aria-hidden="true">💾</span> Kaydediliyor...';
     await addDoc(collection(db, "tournaments"), {
       name, deadline, teamSize: parseInt(teamSize),
       maxTeams: parseInt(maxTeams), rules, logoUrl, createdAt: new Date()
     });
-
     showToast("Başarılı", "Turnuva başarıyla yayına alındı!", "success");
-
-    // Reset form
     ['newTName','newTDeadline','newTMaxTeams','newTRules'].forEach(id =>
       document.getElementById(id).value = id === 'newTMaxTeams' ? '16' : ''
     );
@@ -580,7 +513,6 @@ document.getElementById('createTBtn').addEventListener('click', async () => {
     adminLogoPreview.classList.remove('visible');
     adminLogoHint.textContent = '⚠️ Logo tam kare (1x1) boyutta olmalıdır';
     adminLogoHint.className = 'hint-text';
-
     tabAppsBtn.click();
   } catch (err) {
     console.error(err);
@@ -595,7 +527,6 @@ document.getElementById('createTBtn').addEventListener('click', async () => {
 function loadManageTournamentsList() {
   const container = document.getElementById('manageTournamentsList');
   container.innerHTML = '';
-
   if (tournamentsDataList.length === 0) {
     container.innerHTML = `
       <div class="empty-state">
@@ -605,13 +536,11 @@ function loadManageTournamentsList() {
       </div>`;
     return;
   }
-
   tournamentsDataList.forEach(t => {
     const approved = allApplicationsList.filter(a => a.tournamentId === t.id && a.status === 'onaylandi').length;
     const pending = allApplicationsList.filter(a => a.tournamentId === t.id && a.status === 'bekliyor').length;
     const max = t.maxTeams || 16;
     const pct = Math.min(100, Math.round((approved / max) * 100));
-
     const row = document.createElement('div');
     row.style.cssText = "background:var(--bg-card);border:1px solid var(--border-subtle);border-radius:12px;padding:16px 20px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:14px;transition:all 0.2s;";
     row.innerHTML = `
@@ -633,7 +562,6 @@ function loadManageTournamentsList() {
         <span aria-hidden="true">✏️</span> Düzenle
       </button>
     `;
-
     row.addEventListener('mouseenter', () => {
       row.style.borderColor = 'var(--border-active)';
       row.style.transform = 'translateX(4px)';
@@ -642,7 +570,6 @@ function loadManageTournamentsList() {
       row.style.borderColor = 'var(--border-subtle)';
       row.style.transform = 'translateX(0)';
     });
-
     row.querySelector('.open-edit-trigger').addEventListener('click', () => {
       editingTournamentId = t.id;
       document.getElementById('editTName').value         = t.name;
@@ -654,7 +581,6 @@ function loadManageTournamentsList() {
       sec.style.display = 'block';
       setTimeout(() => sec.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
     });
-
     container.appendChild(row);
   });
 }
@@ -662,28 +588,19 @@ function loadManageTournamentsList() {
 // ── Turnuva Güncelle ───────────────────────────────────────────
 document.getElementById('saveEditTBtn').addEventListener('click', async () => {
   if (!editingTournamentId) return;
-
-  const confirmed = await showConfirm(
-    "Güncelleme Onayı",
-    "Turnuva bilgilerini güncellemek istediğinize emin misiniz? Kayıtlı oyuncuların verileri korunacaktır.",
-    "🛠️"
-  );
+  const confirmed = await showConfirm("Güncelleme Onayı", "Turnuva bilgilerini güncellemek istediğinize emin misiniz? Kayıtlı oyuncuların verileri korunacaktır.", "🛠️");
   if (!confirmed) return;
-
   const btn      = document.getElementById('saveEditTBtn');
   const name     = document.getElementById('editTName').value.trim();
   const maxTeams = document.getElementById('editTMaxTeams').value;
   const rules    = document.getElementById('editTRules').value.trim();
-
   if (!name || !maxTeams || !rules) {
     showToast("Hata", "Tüm alanları doldurunuz.", "error");
     return;
   }
-
   btn.disabled = true;
   const originalText = btn.innerHTML;
   btn.innerHTML = '<span aria-hidden="true">⏳</span> İşleniyor...';
-
   try {
     await updateDoc(doc(db, "tournaments", editingTournamentId), {
       name, maxTeams: parseInt(maxTeams), rules
@@ -715,7 +632,6 @@ function loadApplicationsList() {
     if (data.status !== "bekliyor") return;
     if (filter !== 'all' && data.tournamentId !== filter) return;
     counter++;
-
     const tInfo = tournamentsDataList.find(x => x.id === data.tournamentId) || { name: 'Bilinmeyen Turnuva', teamSize: 3 };
 
     let playersHtml = '';
@@ -727,16 +643,13 @@ function loadApplicationsList() {
             <div style="font-size:13px;font-weight:600;color:#fff;">${p.name||'-'}</div>
             <div style="font-size:11px;color:var(--text-muted);">${p.email||'-'}</div>
           </div>
-          <a href="${p.yt||'#'}" target="_blank" rel="noopener" style="color:var(--accent-cyan);text-decoration:none;font-size:12px;font-weight:600;white-space:nowrap;">
-            Medya ↗
-          </a>
+          <a href="${p.yt||'#'}" target="_blank" rel="noopener" style="color:var(--accent-cyan);text-decoration:none;font-size:12px;font-weight:600;white-space:nowrap;">Medya ↗</a>
         </div>`;
     });
 
     const card = document.createElement('div');
     card.className = 'accordion-item';
     card.style.animationDelay = `${counter * 0.03}s`;
-
     const isSelected = selectedAppIds.has(data.id);
 
     card.innerHTML = `
@@ -781,20 +694,12 @@ function loadApplicationsList() {
       header.setAttribute('aria-expanded', !open);
       if (!open) content.classList.add('open');
     });
-
     header.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' || e.key === ' ') {
-        e.preventDefault();
-        header.click();
-      }
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); header.click(); }
     });
-
     checkbox.addEventListener('change', () => {
-      if (checkbox.checked) {
-        selectedAppIds.add(data.id);
-      } else {
-        selectedAppIds.delete(data.id);
-      }
+      if (checkbox.checked) selectedAppIds.add(data.id);
+      else selectedAppIds.delete(data.id);
       updateBatchBar();
     });
 
@@ -807,7 +712,6 @@ function loadApplicationsList() {
     card.querySelector('.btn-reject').addEventListener('click', () => 
       handleAction(data.id, 'reddet', p1Email, data.teamName, tInfo.name, p1Name, data.players, tInfo.teamSize)
     );
-
     applicationsList.appendChild(card);
   });
 
@@ -822,9 +726,11 @@ function loadApplicationsList() {
 }
 
 // ── Onayla / Reddet ──────────────────────────────────────────────
+// CRITICAL: EmailJS only supports simple {{variable}} substitution.
+// NO Handlebars conditionals {{#if}}, NO {{#each}}, NO arrays.
+// All data must be pre-processed into flat string variables.
 async function handleAction(docId, action, p1Email, teamName, tournamentName, captainName, players, teamSize) {
   const isApproved = action === 'onayla';
-  const actionText = isApproved ? 'onaylamak' : 'reddetmek';
 
   // For rejection, show reason dialog first
   let rejectionReason = '';
@@ -833,65 +739,75 @@ async function handleAction(docId, action, p1Email, teamName, tournamentName, ca
     if (rejectionReason === null) return; // User cancelled
   } else {
     const confirmed = await showConfirm(
-      isApproved ? "Başvuru Onayı" : "Başvuru Reddi",
-      `"${teamName}" takımını ${actionText} istediğinize emin misiniz?`,
-      isApproved ? "✅" : "❌"
+      "Başvuru Onayı",
+      `"${teamName}" takımını onaylamak istediğinize emin misiniz?`,
+      "✅"
     );
     if (!confirmed) return;
   }
 
   try {
-    // Format player list for email
-    const playerList = (players || []).map((p, idx) => ({
-      name: p.name || '-',
-      email: p.email || '-',
-      yt: p.yt || '-',
-      isCaptain: idx === 0
-    }));
-
-    // Format date
+    // ── PREPARE FLAT VARIABLES FOR EMAILJS ──
+    // EmailJS only accepts simple {{variable}} strings. No objects, no arrays.
     const now = new Date();
-    const applicationDate = now.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' });
+    const appDate = now.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' });
+    const tInfo = tournamentsDataList.find(t => t.name === tournamentName);
+    const tLogo = tInfo?.logoUrl || '';
+    const tDeadline = tInfo?.deadline || '';
+    const sizeText = teamSize == 1 ? '1v1 Solo' : `${teamSize}v${teamSize}`;
 
+    // Build player list as HTML string for the email body
+    // Since EmailJS doesn't support loops, we send individual player fields
+    const playerList = players || [];
+    const p1 = playerList[0] || {};
+    const p2 = playerList[1] || {};
+    const p3 = playerList[2] || {};
+    const p4 = playerList[3] || {};
+    const p5 = playerList[4] || {};
+
+    const templateParams = {
+      // Core info
+      to_email: p1Email,
+      captain_name: captainName || 'Kaptan',
+      team_name: teamName,
+      tournament_name: tournamentName || 'TMŞ Turnuvası',
+      tournament_logo: tLogo,
+      team_size: sizeText,
+      application_date: appDate,
+      tournament_deadline: tDeadline,
+      tournament_url: `${window.location.origin}${window.location.pathname.replace('admin.html', 'index.html')}`,
+      youtube_url: 'https://youtube.com',
+      twitter_url: 'https://twitter.com',
+      instagram_url: 'https://instagram.com',
+      discord_url: 'https://discord.gg',
+      admin_name: ADMIN_EMAIL.split('@')[0],
+
+      // Individual player fields (EmailJS cannot loop through arrays)
+      player1_name: p1.name || '-',
+      player1_email: p1.email || '-',
+      player2_name: p2.name || '-',
+      player2_email: p2.email || '-',
+      player3_name: p3.name || '-',
+      player3_email: p3.email || '-',
+      player4_name: p4.name || '-',
+      player4_email: p4.email || '-',
+      player5_name: p5.name || '-',
+      player5_email: p5.email || '-',
+
+      // Rejection only
+      rejection_reason: rejectionReason || ''
+    };
+
+    // Send email via EmailJS
     if (typeof emailjs !== 'undefined' && p1Email) {
-      const templateParams = {
-        to_email: p1Email,
-        captain_name: captainName || 'Kaptan',
-        team_name: teamName,
-        tournament_name: tournamentName || 'TMŞ Turnuvası',
-        tournament_logo: tournamentsDataList.find(t => t.name === tournamentName)?.logoUrl || '',
-        team_size: teamSize == 1 ? '1v1 Solo' : `${teamSize}v${teamSize}`,
-        application_date: applicationDate,
-        tournament_deadline: tournamentsDataList.find(t => t.name === tournamentName)?.deadline || '',
-        tournament_url: `${window.location.origin}/index.html`,
-        youtube_url: 'https://youtube.com/@turkiyeminisampiyonlar',
-        twitter_url: 'https://twitter.com/tms_official',
-        instagram_url: 'https://instagram.com/turkiyeminisampiyonlar',
-        discord_url: 'https://discord.gg/tms',
-        admin_name: ADMIN_EMAIL.split('@')[0],
-        // Player data as JSON string for template processing
-        players: JSON.stringify(playerList),
-        // Individual player fields for simple templates
-        player1_name: playerList[0]?.name || '-',
-        player1_email: playerList[0]?.email || '-',
-        player2_name: playerList[1]?.name || '-',
-        player2_email: playerList[1]?.email || '-',
-        player3_name: playerList[2]?.name || '-',
-        player3_email: playerList[2]?.email || '-',
-        player4_name: playerList[3]?.name || '-',
-        player4_email: playerList[3]?.email || '-',
-        player5_name: playerList[4]?.name || '-',
-        player5_email: playerList[4]?.email || '-'
-      };
-
-      // Add rejection reason if applicable
-      if (!isApproved) {
-        templateParams.rejection_reason = rejectionReason;
-      }
-
-      await emailjs.send('service_bftdxcy', isApproved ? 'template_01nnh1s' : 'template_cpy48jt', templateParams);
+      await emailjs.send(
+        'service_bftdxcy', 
+        isApproved ? 'template_01nnh1s' : 'template_cpy48jt', 
+        templateParams
+      );
     }
 
+    // Update Firestore
     await updateDoc(doc(db, "applications", docId), {
       status: isApproved ? "onaylandi" : "reddedildi",
       ...(rejectionReason && { rejectionReason }),
@@ -908,11 +824,8 @@ async function handleAction(docId, action, p1Email, teamName, tournamentName, ca
 
 // ── ESC ile modal kapat ──────────────────────────────────────────
 document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') {
-    confirmModal.classList.remove('open');
-  }
+  if (e.key === 'Escape') confirmModal.classList.remove('open');
 });
-
 window.addEventListener('click', e => {
   if (e.target === confirmModal) confirmModal.classList.remove('open');
 });
