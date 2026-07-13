@@ -8,6 +8,7 @@
   <title>TMŞ - Türkiye Mini Şampiyonlar</title>
   <link rel="stylesheet" href="style.css">
   <link rel="preconnect" href="https://www.gstatic.com">
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 <base target="_blank">
 <base target="_blank">
 </head>
@@ -145,7 +146,10 @@
           <input type="text" id="website" name="website" tabindex="-1" autocomplete="off">
         </div>
 
-        <button id="submitBtn" class="btn-submit">
+        <div style="display:flex;justify-content:center;margin:16px 0;">
+          <div class="cf-turnstile" data-sitekey="0x4AAAAAAD1KAf0eTNvM1eqj" data-theme="dark" data-callback="onTurnstileSuccess"></div>
+        </div>
+        <button id="submitBtn" class="btn-submit" disabled>
           <span aria-hidden="true">⚔️</span> Savaşa Katıl ve Kaydı Tamamla
         </button>
       </div>
