@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="style.css">
   <link rel="preconnect" href="https://www.gstatic.com">
 <base target="_blank">
+<base target="_blank">
 </head>
 <body>
 
@@ -106,6 +107,14 @@
 
       <div id="selectedTournamentCard" class="selected-tournament-banner"></div>
 
+      
+      <div class="rate-limit-warning" id="rateLimitWarning">
+        <div style="font-size:14px;font-weight:700;color:var(--accent-gold);margin-bottom:8px;">⏳ Çok Fazla Başvuru</div>
+        <div style="color:var(--text-secondary);font-size:13px;">Güvenlik nedeniyle kısa sürede tekrar başvuru yapamazsınız.</div>
+        <div class="rate-limit-timer" id="rateLimitTimer">60</div>
+        <div style="color:var(--text-dark);font-size:12px;">saniye sonra tekrar deneyebilirsiniz.</div>
+      </div>
+
       <div class="form-section">
         <h2>⚔️ Espor Kayıt Formu</h2>
 
@@ -129,6 +138,12 @@
         </div>
 
         <div id="dynamicPlayersContainer"></div>
+
+        
+        <!-- Bot Koruması (Honeypot) -->
+        <div class="honeypot-field" aria-hidden="true">
+          <input type="text" id="website" name="website" tabindex="-1" autocomplete="off">
+        </div>
 
         <button id="submitBtn" class="btn-submit">
           <span aria-hidden="true">⚔️</span> Savaşa Katıl ve Kaydı Tamamla
@@ -162,5 +177,22 @@
   </div>
 
   <script type="module" src="main.js"></script>
+
+  <!-- BAŞVURU DETAY MODAL (YENİ) -->
+  <div id="appDetailModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="appDetailTitle">
+    <div class="modal-content app-detail-modal">
+      <button class="modal-close" id="appDetailCloseBtn" aria-label="Kapat">✕</button>
+      <div id="appDetailContent"></div>
+    </div>
+  </div>
+
+  <!-- TURNUVA DETAY MODAL (YENİ) -->
+  <div id="tournamentDetailModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="tourDetailTitle">
+    <div class="modal-content app-detail-modal">
+      <button class="modal-close" id="tourDetailCloseBtn" aria-label="Kapat">✕</button>
+      <div id="tourDetailContent"></div>
+    </div>
+  </div>
+
 </body>
 </html>
