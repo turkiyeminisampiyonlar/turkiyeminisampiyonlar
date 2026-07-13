@@ -643,6 +643,12 @@ function setupLiveValidation() {
 
 // ── Form Submit ──────────────────────────────────────────────────
 submitBtn.addEventListener('click', async () => {
+  // Turnstile kontrolü
+  if (!turnstileToken) {
+    showToast("Hata", "Lütfen güvenlik doğrulamasını tamamlayın.", "error");
+    return;
+  }
+
   // Rate limit kontrolü
   const rateCheck = checkRateLimit();
   if (!rateCheck.allowed) {
@@ -1003,6 +1009,22 @@ function closeApplicationDetail() {
 
 // ── Enhanced Form Submit with Rate Limit & Honeypot ────────────
 // Override the original submit handler
+
+// ── Turnstile Global ───────────────────────────────────────────
+let turnstileToken = null;
+
+window.onTurnstileSuccess = function(token) {
+  turnstileToken = token;
+  const submitBtn = document.getElementById('submitBtn');
+  if (submitBtn) submitBtn.disabled = false;
+};
+
+window.onTurnstileError = function() {
+  turnstileToken = null;
+  const submitBtn = document.getElementById('submitBtn');
+  if (submitBtn) submitBtn.disabled = true;
+  showToast("Hata", "Güvenlik doğrulaması başarısız. Lütfen tekrar deneyin.", "error");
+};
 
 // ── Initialization ─────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', async () => {
