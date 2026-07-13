@@ -64,6 +64,19 @@ let unsubscribeLogs = null;
 let currentUser = null;
 let currentUserRole = null;
 let pinVerified = false;
+let turnstileToken = null;
+
+window.onTurnstileSuccess = function(token) {
+  turnstileToken = token;
+  const loginBtn = document.getElementById('googleLoginBtn');
+  if (loginBtn) loginBtn.disabled = false;
+};
+
+window.onTurnstileError = function() {
+  turnstileToken = null;
+  const loginBtn = document.getElementById('googleLoginBtn');
+  if (loginBtn) loginBtn.disabled = true;
+};
 
 // ── Toast System ─────────────────────────────────────────────────
 function showToast(title, message, type = 'info', duration = 4000) {
@@ -292,6 +305,10 @@ tabStatsBtn?.addEventListener('click', () => setActiveTab('stats'));
 
 // ── Google Giriş ─────────────────────────────────────────────────
 loginBtn.addEventListener('click', async () => {
+  if (!turnstileToken) {
+    showToast("Hata", "Lütfen güvenlik doğrulamasını tamamlayın.", "error");
+    return;
+  }
   loginError.style.display = 'none';
   showLoader("GİRİŞ YAPILIYOR");
   try {
@@ -1492,4 +1509,83 @@ window.addEventListener('beforeunload', () => {
 // ── Initialization ─────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', () => {
   setupPinVerification();
+});
+
+
+// ── PIN Değiştirme ─────────────────────────────────────────────
+document.getElementById('changePinBtn')?.addEventListener('click', async () => {
+  const currentPin = document.getElementById('currentPin').value.trim();
+  const newPin = document.getElementById('newPin').value.trim();
+  const confirmNewPin = document.getElementById('confirmNewPin').value.trim();
+  const hint = document.getElementById('pinChangeHint');
+
+  // Validasyon
+  if (!currentPin || !newPin || !confirmNewPin) {
+    hint.textContent = '❌ Tüm alanları doldurunuz';
+    hint.className = 'hint-text error';
+    return;
+  }
+
+  if (!/^\d{4}$/.test(currentPin) || !/^\d{4}$/.test(newPin)) {
+    hint.textContent = '❌ PIN 4 haneli sayı olmalıdır';
+    hint.className = 'hint-text error';
+    return;
+  }
+
+  if (newPin !== confirmNewPin) {
+    hint.textContent = '❌ Yeni PINler eşleşmiyor';
+    hint.className = 'hint-text error';
+    return;
+  }
+
+  if (currentPin === newPin) {
+    hint.textContent = '❌ Yeni PIN mevcut PINden farklı olmalıdır';
+    hint.className = 'hint-text error';
+    return;
+  }
+
+  try {
+    showLoader("PIN GÜNCELLENİYOR");
+
+    // Mevcut PINi kontrol et
+    const adminDoc = await getDoc(doc(db, "admins", currentUser.uid));
+    if (!adminDoc.exists()) {
+      hint.textContent = '❌ Admin bilgisi bulunamadı';
+      hint.className = 'hint-text error';
+      hideLoader();
+      return;
+    }
+
+    if (adminDoc.data().pin !== currentPin) {
+      hint.textContent = '❌ Mevcut PIN hatalı';
+      hint.className = 'hint-text error';
+      hideLoader();
+      return;
+    }
+
+    // PINi güncelle
+    await updateDoc(doc(db, "admins", currentUser.uid), {
+      pin: newPin,
+      updatedAt: new Date()
+    });
+
+    await logActivity('change_pin', 'PIN kodu değiştirildi');
+
+    hint.textContent = '✅ PIN başarıyla değiştirildi';
+    hint.className = 'hint-text success';
+
+    // Formu temizle
+    document.getElementById('currentPin').value = '';
+    document.getElementById('newPin').value = '';
+    document.getElementById('confirmNewPin').value = '';
+
+    showToast("Başarılı", "PIN kodunuz güncellendi. Bir sonraki girişte yeni PINi kullanın.", "success", 5000);
+
+  } catch (err) {
+    hint.textContent = '❌ PIN değiştirme hatası: ' + err.message;
+    hint.className = 'hint-text error';
+    showToast("Hata", "PIN değiştirme başarısız: " + err.message, "error");
+  } finally {
+    hideLoader();
+  }
 });
