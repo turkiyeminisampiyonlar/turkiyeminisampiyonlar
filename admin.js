@@ -115,6 +115,81 @@ function showConfirm(title, message, icon = '❓') {
   });
 }
 
+// ── Rejection Reason Dialog ──────────────────────────────────────
+function showRejectionReasonDialog(teamName) {
+  return new Promise(resolve => {
+    // Create custom modal for rejection reason
+    const modal = document.createElement('div');
+    modal.className = 'modal open';
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-modal', 'true');
+    modal.innerHTML = `
+      <div class="modal-content" style="max-width:480px;">
+        <button class="modal-close" id="rejModalClose" aria-label="Kapat">✕</button>
+        <div class="confirm-dialog">
+          <div class="confirm-icon">🚫</div>
+          <h3>Başvuru Red Gerekçesi</h3>
+          <p style="color:var(--text-secondary);font-size:14px;margin-bottom:16px;">
+            <strong style="color:#fff;">${teamName}</strong> takımının başvurusunu reddetmek üzeresiniz. Lütfen gerekçeyi açıklayın:
+          </p>
+          <div class="input-group" style="text-align:left;margin-bottom:20px;">
+            <label style="display:block;margin-bottom:8px;">Red Gerekçesi <span class="required">*</span></label>
+            <textarea id="rejectionReasonInput" rows="4" placeholder="Örn: Eksik bilgi, kurallara uygun değil, kontenjan dolu..." 
+              style="width:100%;padding:12px 14px;background:rgba(8,9,16,0.85);border:1px solid rgba(255,255,255,0.09);border-radius:12px;color:#fff;font-size:14px;resize:vertical;min-height:100px;"></textarea>
+            <p class="hint-text" id="rejectionHint" style="margin-top:6px;">Bu metin kaptana e-posta olarak gönderilecektir.</p>
+          </div>
+          <div class="confirm-actions">
+            <button class="btn-secondary" id="rejCancelBtn">Vazgeç</button>
+            <button class="btn-danger" id="rejConfirmBtn" style="background:rgba(255,95,86,0.15);border-color:rgba(255,95,86,0.4);color:#ff5f56;">
+              <span aria-hidden="true">🚫</span> Reddet ve Gönder
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(modal);
+    const input = modal.querySelector('#rejectionReasonInput');
+    input.focus();
+
+    const cleanup = () => {
+      modal.remove();
+      document.removeEventListener('keydown', onKey);
+    };
+
+    const onConfirm = () => {
+      const reason = input.value.trim();
+      if (!reason) {
+        input.style.borderColor = '#ff5f56';
+        input.style.boxShadow = '0 0 0 3px rgba(255,95,86,0.1)';
+        document.getElementById('rejectionHint').textContent = '❌ Gerekçe zorunludur';
+        document.getElementById('rejectionHint').style.color = '#ff5f56';
+        return;
+      }
+      cleanup();
+      resolve(reason);
+    };
+
+    const onCancel = () => {
+      cleanup();
+      resolve(null);
+    };
+
+    const onKey = (e) => {
+      if (e.key === 'Escape') { onCancel(); }
+    };
+    document.addEventListener('keydown', onKey);
+
+    modal.querySelector('#rejConfirmBtn').addEventListener('click', onConfirm);
+    modal.querySelector('#rejCancelBtn').addEventListener('click', onCancel);
+    modal.querySelector('#rejModalClose').addEventListener('click', onCancel);
+
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) onCancel();
+    });
+  });
+}
+
 // ── Loader ───────────────────────────────────────────────────────
 function showLoader(text) {
   if (text) loader.querySelector('.loader-text').textContent = text;
@@ -641,7 +716,7 @@ function loadApplicationsList() {
     if (filter !== 'all' && data.tournamentId !== filter) return;
     counter++;
 
-    const tInfo = tournamentsDataList.find(x => x.id === data.tournamentId) || { name: 'Bilinmeyen Turnuva' };
+    const tInfo = tournamentsDataList.find(x => x.id === data.tournamentId) || { name: 'Bilinmeyen Turnuva', teamSize: 3 };
 
     let playersHtml = '';
     (data.players || []).forEach((p, idx) => {
@@ -707,7 +782,6 @@ function loadApplicationsList() {
       if (!open) content.classList.add('open');
     });
 
-    // Keyboard support for accordion
     header.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
@@ -725,8 +799,14 @@ function loadApplicationsList() {
     });
 
     const p1Email = data.players?.[0]?.email || '';
-    card.querySelector('.btn-approve').addEventListener('click', () => handleAction(data.id, 'onayla', p1Email, data.teamName, tInfo.name));
-    card.querySelector('.btn-reject').addEventListener('click', () => handleAction(data.id, 'reddet', p1Email, data.teamName, tInfo.name));
+    const p1Name = data.players?.[0]?.name || 'Kaptan';
+
+    card.querySelector('.btn-approve').addEventListener('click', () => 
+      handleAction(data.id, 'onayla', p1Email, data.teamName, tInfo.name, p1Name, data.players, tInfo.teamSize)
+    );
+    card.querySelector('.btn-reject').addEventListener('click', () => 
+      handleAction(data.id, 'reddet', p1Email, data.teamName, tInfo.name, p1Name, data.players, tInfo.teamSize)
+    );
 
     applicationsList.appendChild(card);
   });
@@ -742,28 +822,83 @@ function loadApplicationsList() {
 }
 
 // ── Onayla / Reddet ──────────────────────────────────────────────
-async function handleAction(docId, action, p1Email, teamName, tournamentName) {
+async function handleAction(docId, action, p1Email, teamName, tournamentName, captainName, players, teamSize) {
   const isApproved = action === 'onayla';
   const actionText = isApproved ? 'onaylamak' : 'reddetmek';
 
-  const confirmed = await showConfirm(
-    isApproved ? "Başvuru Onayı" : "Başvuru Reddi",
-    `"${teamName}" takımını ${actionText} istediğinize emin misiniz?`,
-    isApproved ? "✅" : "❌"
-  );
-  if (!confirmed) return;
+  // For rejection, show reason dialog first
+  let rejectionReason = '';
+  if (!isApproved) {
+    rejectionReason = await showRejectionReasonDialog(teamName);
+    if (rejectionReason === null) return; // User cancelled
+  } else {
+    const confirmed = await showConfirm(
+      isApproved ? "Başvuru Onayı" : "Başvuru Reddi",
+      `"${teamName}" takımını ${actionText} istediğinize emin misiniz?`,
+      isApproved ? "✅" : "❌"
+    );
+    if (!confirmed) return;
+  }
 
   try {
+    // Format player list for email
+    const playerList = (players || []).map((p, idx) => ({
+      name: p.name || '-',
+      email: p.email || '-',
+      yt: p.yt || '-',
+      isCaptain: idx === 0
+    }));
+
+    // Format date
+    const now = new Date();
+    const applicationDate = now.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' });
+
     if (typeof emailjs !== 'undefined' && p1Email) {
-      await emailjs.send('service_bftdxcy', isApproved ? 'template_01nnh1s' : 'template_cpy48jt', {
-        to_email:        p1Email,
-        team_name:       teamName,
-        tournament_name: tournamentName || 'TMŞ Turnuvası'
-      });
+      const templateParams = {
+        to_email: p1Email,
+        captain_name: captainName || 'Kaptan',
+        team_name: teamName,
+        tournament_name: tournamentName || 'TMŞ Turnuvası',
+        tournament_logo: tournamentsDataList.find(t => t.name === tournamentName)?.logoUrl || '',
+        team_size: teamSize == 1 ? '1v1 Solo' : `${teamSize}v${teamSize}`,
+        application_date: applicationDate,
+        tournament_deadline: tournamentsDataList.find(t => t.name === tournamentName)?.deadline || '',
+        tournament_url: `${window.location.origin}/index.html`,
+        youtube_url: 'https://youtube.com/@turkiyeminisampiyonlar',
+        twitter_url: 'https://twitter.com/tms_official',
+        instagram_url: 'https://instagram.com/turkiyeminisampiyonlar',
+        discord_url: 'https://discord.gg/tms',
+        admin_name: ADMIN_EMAIL.split('@')[0],
+        // Player data as JSON string for template processing
+        players: JSON.stringify(playerList),
+        // Individual player fields for simple templates
+        player1_name: playerList[0]?.name || '-',
+        player1_email: playerList[0]?.email || '-',
+        player2_name: playerList[1]?.name || '-',
+        player2_email: playerList[1]?.email || '-',
+        player3_name: playerList[2]?.name || '-',
+        player3_email: playerList[2]?.email || '-',
+        player4_name: playerList[3]?.name || '-',
+        player4_email: playerList[3]?.email || '-',
+        player5_name: playerList[4]?.name || '-',
+        player5_email: playerList[4]?.email || '-'
+      };
+
+      // Add rejection reason if applicable
+      if (!isApproved) {
+        templateParams.rejection_reason = rejectionReason;
+      }
+
+      await emailjs.send('service_bftdxcy', isApproved ? 'template_01nnh1s' : 'template_cpy48jt', templateParams);
     }
+
     await updateDoc(doc(db, "applications", docId), {
-      status: isApproved ? "onaylandi" : "reddedildi"
+      status: isApproved ? "onaylandi" : "reddedildi",
+      ...(rejectionReason && { rejectionReason }),
+      processedAt: new Date(),
+      processedBy: ADMIN_EMAIL
     });
+
     showToast("Başarılı", `İşlem tamamlandı! Kaptana e-posta iletildi.`, "success");
   } catch (err) {
     console.error(err);
