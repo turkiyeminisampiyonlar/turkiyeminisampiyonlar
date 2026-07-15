@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="tr" data-theme="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -10,12 +10,8 @@
   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
   <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
   <script>
-    window.addEventListener('load', function() {
-      if (typeof emailjs !== 'undefined') emailjs.init("a7hcviMd81teC1UcX");
-    });
+    window.addEventListener('load', function() { if (typeof emailjs !== 'undefined') emailjs.init("a7hcviMd81teC1UcX"); });
   </script>
-<base target="_blank">
-<base target="_blank">
 </head>
 <body>
 
@@ -47,6 +43,10 @@
         <span class="nav-icon" aria-hidden="true">👑</span>
         <span class="nav-label">Yönetici</span>
       </span>
+    </div>
+    <div class="nav-actions">
+      <button class="lang-toggle" id="adminLangToggle" title="Dil Değiştir">🇹🇷</button>
+      <button class="theme-toggle" id="adminThemeToggle" title="Tema Değiştir">🌙</button>
     </div>
   </nav>
 
@@ -90,6 +90,14 @@
           <div class="stat-value" id="statRejectedApps">0</div>
           <div class="stat-label">Reddedilen</div>
         </div>
+        <div class="stat-card" style="border-color:var(--accent-cyan);">
+          <div class="stat-value" id="statWaitlistApps" style="color:var(--accent-cyan);">0</div>
+          <div class="stat-label">Bekleme Listesi</div>
+        </div>
+        <div class="stat-card" style="border-color:var(--accent-purple);">
+          <div class="stat-value" id="statConversionRate" style="color:var(--accent-purple);">0%</div>
+          <div class="stat-label">Dönüşüm Oranı</div>
+        </div>
       </div>
 
       <div class="admin-tabs">
@@ -97,6 +105,7 @@
         <button class="admin-tab-btn" id="tabCreateBtn">🚀 Turnuva Oluştur & Düzenle</button>
         <button class="admin-tab-btn" id="tabAdminBtn" style="display:none;">👑 Admin Yönetimi</button>
         <button class="admin-tab-btn" id="tabStatsBtn">📊 İstatistikler</button>
+        <button class="admin-tab-btn" id="tabToolsBtn">🛠️ Araçlar</button>
       </div>
 
       <!-- BAŞVURULAR -->
@@ -108,6 +117,7 @@
             <option value="bekliyor" selected>⏳ Bekleyen</option>
             <option value="onaylandi">✅ Onaylanan</option>
             <option value="reddedildi">❌ Reddedilen</option>
+            <option value="bekleme">📋 Bekleme</option>
           </select>
           <button class="export-btn" id="exportCsvBtn" title="CSV Olarak İndir">
             <span aria-hidden="true">📊</span> CSV İndir
@@ -127,12 +137,9 @@
         <div class="batch-bar" id="batchBar">
           <span class="batch-count" id="batchCount">0 başvuru seçildi</span>
           <div class="batch-actions">
-            <button class="btn-success" id="batchApproveBtn">
-              <span aria-hidden="true">✔</span> Onayla
-            </button>
-            <button class="btn-danger" id="batchRejectBtn">
-              <span aria-hidden="true">✕</span> Reddet
-            </button>
+            <button class="btn-success" id="batchApproveBtn"><span aria-hidden="true">✔</span> Onayla</button>
+            <button class="btn-danger" id="batchRejectBtn"><span aria-hidden="true">✕</span> Reddet</button>
+            <button class="btn-warning" id="batchWaitlistBtn"><span aria-hidden="true">📋</span> Beklemeye Al</button>
             <button class="btn-ghost" id="batchClearBtn">Temizle</button>
           </div>
         </div>
@@ -140,8 +147,7 @@
         <div id="applicationsList"></div>
       </div>
 
-
-      <!-- ADMİN YÖNETİMİ SEKMESİ (Sadece Super Admin) -->
+      <!-- ADMİN YÖNETİMİ SEKMESİ -->
       <div id="viewAdminManage" style="display:none;">
         <div class="form-section">
           <h2>👤 Yeni Admin Ekle</h2>
@@ -168,23 +174,13 @@
           </button>
         </div>
 
-
         <div class="form-section" style="border:1px solid rgba(243,156,18,0.2);background:rgba(243,156,18,0.03);">
           <h2>🔐 PIN Kodunu Değiştir</h2>
           <p style="color:var(--text-muted);font-size:13px;margin-top:-16px;margin-bottom:18px;">Güvenliğiniz için düzenli olarak PIN değiştirmeniz önerilir.</p>
           <div class="input-grid">
-            <div class="input-group">
-              <label>Mevcut PIN <span class="required">*</span></label>
-              <input type="password" id="currentPin" placeholder="••••" maxlength="4" inputmode="numeric" pattern="[0-9]*" autocomplete="off">
-            </div>
-            <div class="input-group">
-              <label>Yeni PIN <span class="required">*</span></label>
-              <input type="password" id="newPin" placeholder="••••" maxlength="4" inputmode="numeric" pattern="[0-9]*" autocomplete="off">
-            </div>
-            <div class="input-group">
-              <label>Yeni PIN Tekrar <span class="required">*</span></label>
-              <input type="password" id="confirmNewPin" placeholder="••••" maxlength="4" inputmode="numeric" pattern="[0-9]*" autocomplete="off">
-            </div>
+            <div class="input-group"><label>Mevcut PIN <span class="required">*</span></label><input type="password" id="currentPin" placeholder="••••" maxlength="4" inputmode="numeric" pattern="[0-9]*" autocomplete="off"></div>
+            <div class="input-group"><label>Yeni PIN <span class="required">*</span></label><input type="password" id="newPin" placeholder="••••" maxlength="4" inputmode="numeric" pattern="[0-9]*" autocomplete="off"></div>
+            <div class="input-group"><label>Yeni PIN Tekrar <span class="required">*</span></label><input type="password" id="confirmNewPin" placeholder="••••" maxlength="4" inputmode="numeric" pattern="[0-9]*" autocomplete="off"></div>
           </div>
           <p class="hint-text" id="pinChangeHint">4 haneli sayısal PIN giriniz</p>
           <button id="changePinBtn" class="btn-primary" style="width:100%;padding:14px;margin-top:10px;">
@@ -215,11 +211,14 @@
           <div class="chart-title">🏆 Turnuva Bazlı Başvurular</div>
           <canvas id="tournamentChart" class="chart-canvas"></canvas>
         </div>
+        <div class="chart-container">
+          <div class="chart-title">📊 Durum Dağılımı</div>
+          <canvas id="statusChart" class="chart-canvas"></canvas>
+        </div>
       </div>
 
       <!-- TURNUVA YÖNETİMİ -->
       <div id="viewCreate" style="display:none;">
-
         <div class="form-section">
           <h2>🚀 Yeni Turnuva Yayınla</h2>
           <div class="input-grid">
@@ -246,6 +245,23 @@
               <label>Maksimum Takım Kontenjanı <span class="required">*</span></label>
               <input type="number" id="newTMaxTeams" value="16" min="1" max="128">
             </div>
+            <div class="input-group">
+              <label>Kategori <span class="required">*</span></label>
+              <select id="newTCategory" style="cursor:pointer;">
+                <option value="fps">FPS</option>
+                <option value="moba">MOBA</option>
+                <option value="br">Battle Royale</option>
+                <option value="strategy">Strateji</option>
+                <option value="sports">Spor</option>
+              </select>
+            </div>
+            <div class="input-group">
+              <label>Otomatik Kapanış</label>
+              <select id="newTAutoClose" style="cursor:pointer;">
+                <option value="true" selected>Evet (Deadline'da)</option>
+                <option value="false">Hayır</option>
+              </select>
+            </div>
           </div>
           <div class="input-group">
             <label>Turnuva Logosu <span class="required">*</span></label>
@@ -262,9 +278,20 @@
             <label>Kurallar, Ödüller ve Açıklama <span class="required">*</span></label>
             <textarea id="newTRules" rows="5" placeholder="Katılımcıların göreceği kurallar..."></textarea>
           </div>
+          <div class="input-group">
+            <label>Discord Webhook URL (Opsiyonel)</label>
+            <input type="url" id="newTWebhook" placeholder="https://discord.com/api/webhooks/...">
+          </div>
           <button id="createTBtn" class="btn-primary" style="width:100%;padding:16px;font-size:15px;">
             <span aria-hidden="true">🚀</span> Turnuvayı Canlıya Al
           </button>
+        </div>
+
+        <!-- Turnuva Şablonları — Özellik #8 -->
+        <div class="form-section" style="background:rgba(96,239,255,0.03);border-color:rgba(96,239,255,0.2);">
+          <h2>📋 Şablondan Oluştur</h2>
+          <p style="color:var(--text-muted);font-size:13px;margin-top:-16px;margin-bottom:18px;">Kayıtlı şablonlardan hızlı turnuva oluşturun.</p>
+          <div id="templateList"></div>
         </div>
 
         <div class="form-section">
@@ -277,17 +304,72 @@
           <h3 style="color:var(--accent-gold);font-size:17px;margin-bottom:20px;font-weight:800;">🛠 Turnuva Güvenli Güncelleme</h3>
           <div class="input-group"><label>Turnuva İsmi</label><input type="text" id="editTName"></div>
           <div class="input-group"><label>Maksimum Kontenjan</label><input type="number" id="editTMaxTeams" min="1"></div>
+          <div class="input-group"><label>Kategori</label>
+            <select id="editTCategory">
+              <option value="fps">FPS</option><option value="moba">MOBA</option><option value="br">Battle Royale</option>
+              <option value="strategy">Strateji</option><option value="sports">Spor</option>
+            </select>
+          </div>
           <div class="input-group"><label>Kurallar & Açıklama</label><textarea id="editTRules" rows="5"></textarea></div>
+          <div class="input-group"><label>Discord Webhook</label><input type="url" id="editTWebhook" placeholder="https://discord.com/api/webhooks/..."></div>
           <div class="input-grid" style="opacity:0.4;">
             <div class="input-group"><label>Takım Büyüklüğü (GÜNCELLENEMEZ)</label><input type="text" id="editTSizeDisabled" disabled></div>
             <div class="input-group"><label>Turnuva ID (GÜNCELLENEMEZ)</label><input type="text" id="editTIdDisabled" disabled></div>
           </div>
           <div style="display:flex;gap:12px;margin-top:20px;flex-wrap:wrap;">
-            <button id="saveEditTBtn" class="btn-primary" style="flex:2;min-width:130px;padding:14px;">
-              <span aria-hidden="true">💾</span> Kaydet
-            </button>
+            <button id="saveEditTBtn" class="btn-primary" style="flex:2;min-width:130px;padding:14px;"><span aria-hidden="true">💾</span> Kaydet</button>
             <button id="cancelEditTBtn" class="btn-secondary" style="flex:1;min-width:90px;padding:14px;">Vazgeç</button>
           </div>
+        </div>
+      </div>
+
+      <!-- ARAÇLAR SEKMESİ — Özellik #7, #9, #10 -->
+      <div id="viewTools" style="display:none;">
+        <!-- Toplu E-posta -->
+        <div class="bulk-email-editor">
+          <h3>📧 Toplu E-posta Gönder</h3>
+          <div class="input-group">
+            <label>Turnuva Seç</label>
+            <select id="bulkEmailTournament"></select>
+          </div>
+          <div class="input-group">
+            <label>Konu</label>
+            <input type="text" id="bulkEmailSubject" placeholder="Duyuru başlığı...">
+          </div>
+          <div class="input-group">
+            <label>Mesaj</label>
+            <textarea id="bulkEmailBody" rows="4" placeholder="Tüm onaylı takımlara gönderilecek mesaj..."></textarea>
+          </div>
+          <button id="sendBulkEmailBtn" class="btn-primary" style="width:100%;padding:14px;">
+            <span aria-hidden="true">📧</span> Toplu E-posta Gönder
+          </button>
+        </div>
+
+        <!-- Veri Yedekleme — Özellik #9 -->
+        <div class="form-section">
+          <h2>💾 Veri Yedekleme</h2>
+          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px;">
+            <button id="exportBackupBtn" class="btn-success" style="flex:1;">
+              <span aria-hidden="true">📥</span> Tüm Veriyi JSON İndir
+            </button>
+            <div class="backup-zone" style="flex:2;min-width:200px;" id="importBackupZone">
+              <div style="font-size:24px;margin-bottom:8px;">📤</div>
+              <div style="font-size:13px;color:var(--text-secondary);">Yedek dosyasını sürükleyin veya tıklayın</div>
+              <input type="file" id="importBackupInput" accept=".json" style="position:absolute;inset:0;opacity:0;cursor:pointer;">
+            </div>
+          </div>
+        </div>
+
+        <!-- Webhook Test -->
+        <div class="webhook-config">
+          <h3>🔔 Discord Webhook Test</h3>
+          <div class="input-group">
+            <label>Webhook URL</label>
+            <input type="url" id="testWebhookUrl" placeholder="https://discord.com/api/webhooks/...">
+          </div>
+          <button id="testWebhookBtn" class="btn-primary" style="width:100%;padding:14px;">
+            <span aria-hidden="true">🧪</span> Test Mesajı Gönder
+          </button>
         </div>
       </div>
 
@@ -298,7 +380,6 @@
       </div>
     </div>
   </div>
-
 
   <!-- PIN DOĞRULAMA -->
   <div id="pinModal" class="modal" role="dialog" aria-modal="true">
@@ -316,7 +397,6 @@
       <button id="pinSubmitBtn" class="btn-primary" style="width:100%;padding:14px;margin-top:10px;">Doğrula</button>
     </div>
   </div>
-
 
   <!-- BAŞVURU DETAY MODAL -->
   <div id="adminAppDetailModal" class="modal" role="dialog" aria-modal="true">
