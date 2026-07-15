@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="tr" data-theme="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -9,15 +9,13 @@
   <link rel="stylesheet" href="style.css">
   <link rel="preconnect" href="https://www.gstatic.com">
   <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
-<base target="_blank">
-<base target="_blank">
 </head>
 <body>
 
   <!-- LOADER -->
   <div id="tms-loader">
     <div class="loader-spinner"></div>
-    <div class="loader-text">BAĞLANTI SAĞLANIYOR</div>
+    <div class="loader-text" data-i18n="loaderText">BAĞLANTI SAĞLANIYOR</div>
   </div>
 
   <!-- TOAST CONTAINER -->
@@ -32,16 +30,20 @@
     <div class="nav-links">
       <button class="nav-btn active" id="navHomeBtn" aria-label="Ana Sayfa" aria-current="page">
         <span class="nav-icon" aria-hidden="true">🏠</span>
-        <span class="nav-label">Ana Sayfa</span>
+        <span class="nav-label" data-i18n="navHome">Ana Sayfa</span>
       </button>
       <button class="nav-btn" id="navMyAppsBtn" aria-label="Katıldıklarım">
         <span class="nav-icon" aria-hidden="true">🎮</span>
-        <span class="nav-label">Katıldıklarım</span>
+        <span class="nav-label" data-i18n="navMyApps">Katıldıklarım</span>
       </button>
       <a href="admin.html" class="nav-btn nav-admin" aria-label="Yönetici Paneli">
         <span class="nav-icon" aria-hidden="true">👑</span>
-        <span class="nav-label">Yönetici</span>
+        <span class="nav-label" data-i18n="navAdmin">Yönetici</span>
       </a>
+    </div>
+    <div class="nav-actions">
+      <button class="lang-toggle" id="langToggle" title="Dil Değiştir">🇹🇷</button>
+      <button class="theme-toggle" id="themeToggle" title="Tema Değiştir">🌙</button>
     </div>
   </nav>
 
@@ -49,15 +51,15 @@
   <nav class="bottom-nav" role="navigation" aria-label="Mobil navigasyon">
     <button class="nav-btn active" id="bottomNavHome" aria-label="Ana Sayfa">
       <span class="nav-icon" aria-hidden="true">🏠</span>
-      <span class="nav-label">Ana Sayfa</span>
+      <span class="nav-label" data-i18n="navHome">Ana Sayfa</span>
     </button>
     <button class="nav-btn" id="bottomNavMyApps" aria-label="Katıldıklarım">
       <span class="nav-icon" aria-hidden="true">🎮</span>
-      <span class="nav-label">Katıldıklarım</span>
+      <span class="nav-label" data-i18n="navMyApps">Katıldıklarım</span>
     </button>
     <a href="admin.html" class="nav-btn nav-admin" aria-label="Yönetici Paneli">
       <span class="nav-icon" aria-hidden="true">👑</span>
-      <span class="nav-label">Yönetici</span>
+      <span class="nav-label" data-i18n="navAdmin">Yönetici</span>
     </a>
   </nav>
 
@@ -67,23 +69,24 @@
     <!-- HERO BAŞLIK -->
     <section class="hero-section" id="heroSection" aria-label="Site başlığı">
       <img src="tmş.png" alt="TMŞ Logo" id="logo" onerror="this.style.display='none'" loading="eager">
-      <h1>Türkiye Mini Şampiyonlar</h1>
-      <p class="subtitle">Henüz keşfedilmemiş yeteneklerin düello meydanı</p>
+      <h1 data-i18n="siteTitle">Türkiye Mini Şampiyonlar</h1>
+      <p class="subtitle" data-i18n="siteSubtitle">Henüz keşfedilmemiş yeteneklerin düello meydanı</p>
     </section>
 
     <!-- TURNUVA HUB -->
     <section id="tournamentHubView" aria-label="Turnuva listesi">
       <div class="search-bar-wrap">
         <span class="search-icon" aria-hidden="true">🔍</span>
-        <input type="text" id="searchInput" placeholder="Turnuva ara..." autocomplete="off" aria-label="Turnuva ara">
+        <input type="text" id="searchInput" placeholder="Turnuva ara..." autocomplete="off" aria-label="Turnuva ara" data-i18n-placeholder="searchPlaceholder">
         <button class="search-clear" id="searchClear" aria-label="Aramayı temizle">✕</button>
       </div>
 
       <div class="filter-bar" id="filterBar" aria-label="Filtreler">
-        <button class="filter-chip active" data-filter="all">Tümü</button>
-        <button class="filter-chip" data-filter="active">🟢 Açık</button>
-        <button class="filter-chip" data-filter="expired">🔴 Kapalı</button>
-        <button class="filter-chip" data-filter="full">🟡 Dolu</button>
+        <button class="filter-chip active" data-filter="all" data-i18n="filterAll">Tümü</button>
+        <button class="filter-chip" data-filter="active">🟢 <span data-i18n="filterActive">Açık</span></button>
+        <button class="filter-chip" data-filter="expired">🔴 <span data-i18n="filterExpired">Kapalı</span></button>
+        <button class="filter-chip" data-filter="full">🟡 <span data-i18n="filterFull">Dolu</span></button>
+        <button class="filter-chip" data-filter="paused">⏸️ <span data-i18n="filterPaused">Durdurulmuş</span></button>
       </div>
 
       <div id="tournamentGrid" class="tournament-grid" role="list" aria-label="Turnuvalar"></div>
@@ -91,56 +94,71 @@
 
     <!-- KATILDIKLARIM -->
     <section id="myApplicationsView" style="display:none;" aria-label="Katıldığım turnuvalar">
-      <div class="section-title">🎮 Katıldığım Turnuvalar</div>
+      <div class="section-title" data-i18n="myAppsTitle">🎮 Katıldığım Turnuvalar</div>
       <div class="search-bar-wrap" style="margin-bottom:20px;">
         <span class="search-icon" aria-hidden="true">📧</span>
-        <input type="email" id="myEmailInput" placeholder="Kaptan e-posta adresiniz" autocomplete="email" aria-label="E-posta adresi">
-        <button id="searchMyAppsBtn" class="btn-primary" style="padding:10px 18px;white-space:nowrap;font-size:13px;">Sorgula</button>
+        <input type="email" id="myEmailInput" placeholder="Kaptan e-posta adresiniz" autocomplete="email" aria-label="E-posta adresi" data-i18n-placeholder="emailPlaceholder">
+        <button id="searchMyAppsBtn" class="btn-primary" style="padding:10px 18px;white-space:nowrap;font-size:13px;" data-i18n="queryBtn">Sorgula</button>
       </div>
       <div id="myApplicationsList" role="list" aria-label="Başvurularım"></div>
+      
+      <!-- Bildirim Tercihleri -->
+      <div class="notification-settings" id="notificationSettings" style="display:none;">
+        <h3 data-i18n="notifSettings">🔔 Bildirim Tercihleri</h3>
+        <div class="notif-option">
+          <label data-i18n="notifEmail">E-posta Bildirimleri</label>
+          <button class="notif-toggle active" id="notifEmailToggle" data-type="email"></button>
+        </div>
+        <div class="notif-option">
+          <label data-i18n="notifPush">Web Push Bildirimleri</label>
+          <button class="notif-toggle" id="notifPushToggle" data-type="push"></button>
+        </div>
+        <div class="notif-option">
+          <label data-i18n="notifReminder">Deadline Hatırlatıcı</label>
+          <button class="notif-toggle active" id="notifReminderToggle" data-type="reminder"></button>
+        </div>
+      </div>
     </section>
 
     <!-- KAYIT FORMU -->
     <section id="registrationFormView" style="display:none;" aria-label="Kayıt formu">
       <button id="backToHubBtn" class="btn-back">
-        <span aria-hidden="true">◀</span> Turnuvalara Dön
+        <span aria-hidden="true">◀</span> <span data-i18n="backToHub">Turnuvalara Dön</span>
       </button>
 
       <div id="selectedTournamentCard" class="selected-tournament-banner"></div>
 
-      
       <div class="rate-limit-warning" id="rateLimitWarning">
-        <div style="font-size:14px;font-weight:700;color:var(--accent-gold);margin-bottom:8px;">⏳ Çok Fazla Başvuru</div>
-        <div style="color:var(--text-secondary);font-size:13px;">Güvenlik nedeniyle kısa sürede tekrar başvuru yapamazsınız.</div>
+        <div style="font-size:14px;font-weight:700;color:var(--accent-gold);margin-bottom:8px;" data-i18n="rateLimitTitle">⏳ Çok Fazla Başvuru</div>
+        <div style="color:var(--text-secondary);font-size:13px;" data-i18n="rateLimitDesc">Güvenlik nedeniyle kısa sürede tekrar başvuru yapamazsınız.</div>
         <div class="rate-limit-timer" id="rateLimitTimer">60</div>
-        <div style="color:var(--text-dark);font-size:12px;">saniye sonra tekrar deneyebilirsiniz.</div>
+        <div style="color:var(--text-dark);font-size:12px;" data-i18n="rateLimitRetry">saniye sonra tekrar deneyebilirsiniz.</div>
       </div>
 
       <div class="form-section">
-        <h2>⚔️ Espor Kayıt Formu</h2>
+        <h2 data-i18n="formTitle">⚔️ Espor Kayıt Formu</h2>
 
         <div class="input-grid">
           <div class="input-group">
-            <label for="teamName">Takım / Oyuncu İsmi <span class="required">*</span></label>
+            <label for="teamName"><span data-i18n="teamNameLabel">Takım / Oyuncu İsmi</span> <span class="required">*</span></label>
             <input type="text" id="teamName" placeholder="Savaş alanındaki adınız" autocomplete="off">
             <p class="hint-text" id="teamNameHint"></p>
           </div>
           <div class="input-group">
-            <label>Takım Logosu <span class="required">*</span></label>
+            <label><span data-i18n="teamLogoLabel">Takım Logosu</span> <span class="required">*</span></label>
             <div class="file-upload-zone" id="fileUploadZone">
               <div class="upload-icon" aria-hidden="true">📁</div>
-              <div class="upload-text">Logoyu sürükleyin veya tıklayın</div>
-              <div class="upload-hint">Kare (1:1) format, max 5MB</div>
+              <div class="upload-text" data-i18n="uploadText">Logoyu sürükleyin veya tıklayın</div>
+              <div class="upload-hint" data-i18n="uploadHint">Kare (1:1) format, max 5MB</div>
               <input type="file" id="teamLogo" accept="image/*" aria-label="Takım logosu seç">
             </div>
             <img class="image-preview" id="logoPreview" alt="Logo önizleme">
-            <p class="hint-text" id="logoHint">⚠️ Logo tam kare (1:1) boyutta olmalıdır</p>
+            <p class="hint-text" id="logoHint">⚠️ <span data-i18n="logoHint">Logo tam kare (1:1) boyutta olmalıdır</span></p>
           </div>
         </div>
 
         <div id="dynamicPlayersContainer"></div>
 
-        
         <!-- Bot Koruması (Honeypot) -->
         <div class="honeypot-field" aria-hidden="true">
           <input type="text" id="website" name="website" tabindex="-1" autocomplete="off">
@@ -150,7 +168,21 @@
           <div class="cf-turnstile" data-sitekey="0x4AAAAAAD1KAf0eTNvM1eqj" data-theme="dark" data-callback="onTurnstileSuccess"></div>
         </div>
         <button id="submitBtn" class="btn-submit" disabled>
-          <span aria-hidden="true">⚔️</span> Savaşa Katıl ve Kaydı Tamamla
+          <span aria-hidden="true">⚔️</span> <span data-i18n="submitBtn">Savaşa Katıl ve Kaydı Tamamla</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- BAŞVURU DÜZENLEME FORMU -->
+    <section id="editApplicationView" style="display:none;" aria-label="Başvuru düzenleme">
+      <button id="backToMyAppsBtn" class="btn-back">
+        <span aria-hidden="true">◀</span> <span data-i18n="backToMyApps">Başvurularıma Dön</span>
+      </button>
+      <div class="form-section">
+        <h2 data-i18n="editFormTitle">✏️ Başvurunu Düzenle</h2>
+        <div id="editFormContent"></div>
+        <button id="saveEditBtn" class="btn-primary" style="width:100%;padding:14px;margin-top:10px;">
+          <span aria-hidden="true">💾</span> <span data-i18n="saveChanges">Değişiklikleri Kaydet</span>
         </button>
       </div>
     </section>
@@ -163,7 +195,7 @@
       <div id="statusIcon"></div>
       <h2 id="statusTitle"></h2>
       <p id="statusMessage"></p>
-      <button id="closeStatusBtn" class="btn-secondary" style="margin-top:20px;padding:10px 35px;">Kapat</button>
+      <button id="closeStatusBtn" class="btn-secondary" style="margin-top:20px;padding:10px 35px;" data-i18n="closeBtn">Kapat</button>
     </div>
   </div>
 
@@ -171,18 +203,16 @@
   <div id="confirmModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
     <div class="modal-content confirm-dialog">
       <div class="confirm-icon" id="confirmIcon">❓</div>
-      <h3 id="confirmTitle">Emin misiniz?</h3>
-      <p id="confirmMessage">Bu işlem geri alınamaz.</p>
+      <h3 id="confirmTitle" data-i18n="confirmTitle">Emin misiniz?</h3>
+      <p id="confirmMessage" data-i18n="confirmMessage">Bu işlem geri alınamaz.</p>
       <div class="confirm-actions">
-        <button class="btn-secondary" id="confirmCancel">Vazgeç</button>
-        <button class="btn-primary" id="confirmOk">Onayla</button>
+        <button class="btn-secondary" id="confirmCancel" data-i18n="cancelBtn">Vazgeç</button>
+        <button class="btn-primary" id="confirmOk" data-i18n="confirmBtn">Onayla</button>
       </div>
     </div>
   </div>
 
-  <script type="module" src="main.js"></script>
-
-  <!-- BAŞVURU DETAY MODAL (YENİ) -->
+  <!-- BAŞVURU DETAY MODAL -->
   <div id="appDetailModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="appDetailTitle">
     <div class="modal-content app-detail-modal">
       <button class="modal-close" id="appDetailCloseBtn" aria-label="Kapat">✕</button>
@@ -190,7 +220,7 @@
     </div>
   </div>
 
-  <!-- TURNUVA DETAY MODAL (YENİ) -->
+  <!-- TURNUVA DETAY MODAL -->
   <div id="tournamentDetailModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="tourDetailTitle">
     <div class="modal-content app-detail-modal">
       <button class="modal-close" id="tourDetailCloseBtn" aria-label="Kapat">✕</button>
@@ -198,5 +228,6 @@
     </div>
   </div>
 
+  <script type="module" src="main.js"></script>
 </body>
 </html>
